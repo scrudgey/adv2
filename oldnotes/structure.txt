@@ -1,0 +1,190 @@
+data:
+text files, with sub-structures in folders
+
+distinguish between instances and the nimrod specs.
+
+we can move $object from room to room without knowing what it
+looks like.
+it won't look like anything until something / anything queries
+its "description" field
+
+
+nested properties, so that the higher collapses the lower.
+collapsing villain collapses appearance and sex,
+but collapsing villain appearance or sex does not collapse villain.
+does this have to be true?
+
+rule of thumb: don't collapse any property or instance until
+we absolutely have to, in order to know what happens.
+
+----
+
+nimrod structure:
+
+is sex below name, or is name below sex?
+  things should be structured according to specificity
+  but then, some things are linked
+
+relationships:
+  name collapses sex
+  sex does not collapse name
+  sex collapses grammar structures
+  grammar structures collapse sex
+  appearance collapses sex? probably, or nothing
+  sex does not collapse appearance
+  name does not collapse appearance
+  appearance does not collapse name
+think of "collapse relationships" like a "requirements network"
+they not only collapse their requirements, but they depend on
+the requirements in such a way that sex determines possessive
+and possessive determines sex
+so really it's a cluster of things that collapse simultaneously.
+  $sex
+  $sex.grammar
+so the basic framework of a property that collapses should allow
+for multiple simultaneous properties
+or more general? there's a way for eigenvalues to affect
+  other eigenvalues when set (tab-indent and address)
+but it's annoying to think about the situation with sex vs.
+grammar, having to double up all the specific code
+  and to have "possessive" collapse to his / her and from there
+  set sex, it just feels incorrect. sex determines possessive,
+  not the other way around
+
+"the villain stubs {$villain.possessive} toe"
+$villain.possessive.get
+  query requirements:
+$villain.possessive -> $villain.sex
+$villain.sex can be either a superposition or an eigenvalue.
+as part of querying it, it will collapse.
+
+--------
+
+$villain properties:
+
+-name
+  -firstName
+  -lastName
+  -nickName
+  -appearance
+  -sex
+    -first_person_singular  *note: me / my
+    -third_person_singular  *note: he / she
+    -possessive             *note: his / her
+
+collapsing name collapses sex and pronouns
+collapsing appearance collapses name
+
+{villain} example:
+
+-name
+  Carmen Sandiego
+    -firstName
+      Carmen
+    -lastName
+      Sandiego
+    -nickName
+      {villain.nickName}
+    -appearance
+      {appearance.rich}
+      {appearance.spy}
+    -sex
+      female
+    -first_person_singular
+      I / me
+    -third_person_singular
+      she
+    -possessive
+      her
+
+-----
+
+$room:
+
+-name
+  -appearance
+  -exits
+
+
+collapsing name collapses exit types (stair, door, window)
+really, collapsing room should collapse its type (room, hall,
+  road, forest) and that collapses its name, appearance, and
+  exits (number and type of exit)
+
+room.type.name
+room.type.description ?
+
+
+it's possible that collapsing one value changes the state of
+other values. either to eigenvalues or superpositions
+  but you shouldn't be able to change an eigenvalue to a
+  superposition.
+this feels like it's abstracting too much from
+
+eigenValue1: female / she / her
+eigenValue2: male / him / his
+
+possibility: knowing that the villain is female determines
+what possessives to use, and this means we don't need to store
+values in the person structure
+
+$villain.name -> carmen sandiego -> (female / she / her)
+
+$location -> $room
+  causes $exits -> {door} {door} {0.5|window}
+in this case, collapsing specifically to "room" changes the
+exits to a series of possibilities
+
+is there any reason not to just collapse all of the properties
+as soon as any specific is requested?
+in other words, what is gained by leaving the rest in
+superposition?
+in QM, superposition states can still influence each other before
+collapse.
+it's a neat possibility and it feels like i should keep unqueried
+things in superposition! partly because it feels like its more
+elegant if every property and every item is at root the same
+kind of object in superposition.
+
+this would be handled like:
+$villain ->
+name: carmen
+sex: F
+appearance: {appearance.rich.female} {appearance.spy.female}
+org: -etc-
+
+the data files specify some eigenstates, and
+
+"any organization at all:"
+{organization}
+
+"any terrorist organization:"
+{organization.terrorist}
+
+
+i feel like we have the basic picture in place, the only problem
+is how do we specify relations of precedence
+
+{villain} -> $villain -> carmen sandiego?
+
+$villain.sex.name
+$villain.sex.grammar
+$villain.organization
+
+relationships:
+  name collapses sex
+  sex does not collapse name
+
+  sex collapses grammar structures
+  grammar structures collapses sex
+
+
+how to specify?
+villain
+-----
+-sex: grammar
+  {male | female}
+-grammar: sex
+  he / him / his : male ?
+  she / her / hers : female ?
+

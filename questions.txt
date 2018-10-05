@@ -1,0 +1,660 @@
+things to work out:
+
+syntactic paradigms:
+  S1. select one from this list
+  S2. construct a list with the following elements
+  S3. populate the fields of a particular type of object
+    with the following sets of (1) or (2) as required
+  S4. allow keys to refer to instances of objects:
+    {room} is sort of like a generic nimrod key {noun}
+
+structural designs:
+  D1. how is state - event - outcome structured?
+    a. how is game loop structured?
+  D2. gameplay snippet examples?
+    a. original vision: moving between "rooms" or "states" like
+      - in trunk of car
+      - underwater trap
+      - imprisioned
+      - street
+      have we departed meaningfully from the original vision?
+  D3. what was the original vision?
+
+----------------
+
+#D1 how is state - event - outcome structured?
+  it seems that something like a python decorator almost works
+  here. but is it necessary for such a fancy thing?
+
+  events know how to describe the lead-up to an outcome
+    "you open the wallet"
+    "you inspect the {object}"
+
+  then outcome takes over:
+    "you find a note reading {}"
+
+  now, event draws upon some variable: {container}
+  or {door} or {entrance-sentence} or something.... this is all
+  from a namespace local to the state
+  so, given the location, several things are defined.
+  from that list of things, we can figure out which events are
+  possible.
+  from the events, we know which outcomes are possible
+
+  not all outcomes are scripted, they can be instead the result
+  of player actions
+
+  who handles making events and actions available?
+  it is checked from state at each step.
+  every element of state (location, player, inv.) is considered:
+  each potentially exposes several hooks that accept event types;
+  or event types accept those hooks?
+  e.g. cell phone: exposes "receive call" -> message
+  parrot in room: exposes "parrot speech" -> speech
+    so, state is a collection of several components, all of which
+    support exposing hooks?
+    don't we need to refer to components of state by variable?
+    like location, player, etc. ?
+
+  i'm just imagining that events would make use of hooks. but how?
+  analyzing the example setup #D2:
+  try slotting the same outcome into multiple events to see
+  what changes and what stays constant.
+
+  first though i'm having trouble with the idea of outcomes.
+  the idea is that there is a director that, given the current
+  state, knows what outcomes is desirable next.
+  this allows something like a plot-like structure, or something
+  more than just pure random events at all places and times.
+  the hope is that it can arrange something like a
+  lead-up and confrontation with a miniboss, a chase sequence,
+  a set of clues, etc.
+  how is that phrased in terms of outcomes?
+  set1:
+    a. friend kidnapped
+    b. location of kidnapping learned
+    c. friend rescued, and valuable knowledge is gained
+  this is a very basic set of outcomes leading to a mini structure,
+  for example.
+  1. the player gains knowledge (locations, people) and then acts
+    based on that.
+    once the player knows the enemy's next move, she can attempt to
+    set a trap / intercept the enemy.
+    game ends with confrontation of enemy: and this can only happen
+    when the player has assembled certain knowledge.
+    some knowledge can expire after a few turns, too, or if an
+    attempt goes south.
+    the game is about collecting knowledge, and items
+  2. some outcomes are tied to locations / player use of knowledge.
+    the friend rescue outcome cannot happen until the player
+    goes to the location the friend is being held.
+    this means setting up events in advance: at a location,
+      upon certain triggers.
+  3. there's like a context / namespace to these events relative
+    to the overall arc.
+    for example, kidnap location is used in b and c both. these
+    events or outcomes must be generic to location, and both
+    must refer to the same location.
+
+  event:
+    a sequence of events, and outcome can override the events
+    based on their type. outcomes know how to override the
+    randomized specifics of an event.
+    problem: if you just override any old speech act, how does
+    it ensure that people stay in character, and that their
+    statements make sense
+  event: bad guys attack
+    1. {badguy} enters doorway
+    2. speech act: {badguy}, {threat-speech}
+    3. attack: {badguy}, {state.player}
+  i can build these up like routines in YC3 AI, I think
+
+  outcome: it's kind of like, we need {outcome} off of <event>
+    or upon <state event>
+    like, we need the kidnap-confrontation upon player gets to
+    location.
+    this is more like what i'm talking about:
+    the requirements are set at a high level, and the details
+    are filled in as required!! this is it.
+    this was the original vision.
+
+
+
+
+#D2
+  state:
+    * apartment
+    * cell phone
+    * table phone
+    * TV
+    * window
+    * door / exit
+
+  possible events:
+    cell phone: phone call
+    table phone: phone call
+    thug(s) bursts in through window
+    something is seen out the window
+    thug(s) bursts in through door
+    visited by stranger at door
+
+  possible actions:
+    turn on TV
+    use cell phone
+    use table phone
+    leave through window
+    leave through door
+
+  possible outcomes: (set up the next plot?)
+    learn of bad guy?
+    learn the name of bad guy organization?
+
+  #D2.a
+    it was originally to be a small, text-based game, moving between
+    rooms in a locally random markov chain fashion
+    like a random choose your own adventure book.
+    can we make this game to start?
+    problems with this model:
+      no plot / progression
+      how many different definitions of "street"? or does
+        game always involve starting in same apartment, going to
+        same street?
+
+    nimrod is less central here. more for flavor.
+
+----------------
+
+#D3
+  the original vision: we specify at the highest level what
+  the plot should be.
+  {plot}->{miniboss}->{reward} or something
+  plot can be structured like nimrod: fractal, context free
+
+  then, this gets filtered down into specifics in a nimrod
+  randomization way
+  but how?
+  plot:
+    1. meet friend
+    2. friend is kidnapped
+    3. discover location of friend
+    4. rescue friend
+
+  this sounds like a list of desired outcomes
+  and they can be realized how?
+  there is an additional part where the outcome spec was
+  influencing the collapse of the state:
+  if meeting the friend is next desired outcome
+  then how does it affect things?
+  if anything is collapsing, it prioritizes collapsing in a way that
+  can support the desired outcome.
+
+  example:
+    state: in apartment
+    plot: meet friend
+    collapse possibilities:
+      1. use phone
+      2. leave room
+
+    1. use phone: {phone-event}
+    2. leave room: enter new location
+
+    somehow these things need to be handled in the same way
+    use phone is a specific interaction with phone, but it
+       collapses {phone-event}
+    entering a new location is a specific function that changes
+      state, changes location;
+      it collapses {room} or whatever is connected to the exit
+        {street}, {room}, {hall} etc.
+    in collapsing, these things then somehow prefer an outcome
+    that allows the outcome.
+    it's harder to see how that works in theory, but it's
+    easy to see how it works in practice.
+
+    projecting the possible outcomes and taking the inner product
+    with the desired outcome
+    the tricky part here is that some of the events that make
+    an outcome possible are buried, kinda?
+    room allows
+      encounters upon entering
+      people inside
+      message finding
+
+    there's something like a breadth-first search that can
+    figure out a path through possible state changes?
+    thinking in terms of a directed graph or something like
+    that, instead of a vector
+
+    is it possible to represent changes to state as some sort
+    of graph?
+
+    the problem becomes event / outcome hooks
+    this is the new discovery: outcome dictates collapse
+
+
+    state defines a set of possible events that could happen
+    if required: how to do a
+      message-received event
+      attack event
+      etc.
+    events know how to bring about different outcomes, as
+    required:
+      message-receieved knows how to do a
+        kidnapping note event
+        letter from old friend event
+        notification of crime event
+        notification of rare artifact event
+
+    outcomes are supported by event, and events have
+    individual code for particular outcomes
+
+    state specifies different events that can happen.
+
+    director chooses an event and tells it what outcome
+    should happen
+
+    (event-outcome is unified)
+
+    events might take arguments? for example, it makes sense
+    for a bad guy to be able to tell you the location of the
+    kidnapped friend.
+    it makes less sense if you just meet someone on the street
+    and they talk to you like a hardened criminal.
+    now, what if you're in a room and there's no bad guy?
+    would the director know to bring a bad guy into the scene
+    and then have him speak?
+    a BFS approach would find this possibility, but the problem
+    with BFS approach is that it'll find a limited number of
+    possibilities, or the shortest route?
+
+    assuming something very simple (director chooses event
+    that satisfies outcome, or else random)
+    let's hash out how the state is structured and enumerates
+    possible events and available actions.
+
+    things that can throw events:
+      state.player.inventory
+      state.location
+      state.location.items
+    do we hardcode this, or abstract event reporting?
+
+    things want to reference stuff like
+    state.player
+    state.player.inventory
+    so a lot of things should be explicitly fields of the state
+    object, to be referenced.
+
+    when a plot is instantiated, inject the necessary references
+    in its constructor.
+
+    state.events() -> return all available events
+    query each thing:
+      state.player.inventory
+      state.location
+
+    to decide if an event is possible, objects will need to have
+    state passed in... but really, what they need, is a list of
+    all objects in the state.
+    like YC3, essentially, because it's the same sort of thing.
+    events are things that can just happen,
+    actions are things the player can do.
+
+    it would be nice and clean if we can phrase everything in
+    terms of state: collapse requirements, event effects
+
+    take state, return state', compare, diff
+    is it possible that all the state changes could be effected
+    by nimrod?
+
+    nimrod / event statefulness handled by it all being keyed off state.
+      namespaces tied to objects in nimrod
+
+    there's state collapse, and also direct setting
+    when location is changed, offload location state for
+      persistence / map growing
+
+    state contains player
+      player contains inv.
+    state contains location
+      location contains items
+    this should be abstracted: items are containers
+
+
+
+
+
+
+D3:
+  *this* was the original vision:
+
+  it would be nice and clean if we can phrase everything in
+  terms of state: collapse requirements, event effects
+  take state, return state', compare, diff
+
+  is it possible that all the state changes could be effected
+  by nimrod key queries?
+
+  it all becomes a matter of the state and how / when it changes
+
+  desired outcomes:
+    phrased in terms of a desired state.
+
+  event effects:
+    phrased in terms of how state changes.
+
+  nimrod collapsing:
+    when collapsing something like {enemy-org}, it will either
+    substitute the existing value, or it will collapse the key.
+
+  this all explains what was meant by the original vision.
+  now when events reference state properties, they are either
+  collapsed or a nimrod key.
+  so, nimrod parsing takes place in context which is an object
+  and its namespace / properties.
+
+  let's try to rephrase everything in terms of this.
+
+  to know whether a player has knowledge: check if property
+    is collapsed or not.
+
+  to check available events:
+    state.events()
+    state.actions()
+
+  to check outcomes:
+    event.happen(state).diff(state)
+
+
+  so it's like we're taking nimrod and embedding it in context
+  context is object
+  context is hierarchical
+    global.state.player.inventory
+
+  upon collapsing a key off inventory, we check context:
+    inventory -> player -> state
+  if none of these have collapsed that key, we go forth to global
+  and collapse from the general dictionary...?
+
+  what about if inventory is referencing state's property
+  specifically?
+  {state.location}
+  what if inventory is referencing an uncollapsed key property
+  of state, such that state should now collapse and change?
+  <state.location>
+
+  what about outcomes dictating collapse?
+  outcome is phrased in terms of having a collapsed state property.
+  so if you wanted the player to learn about the kidnapping
+  location, you'd check if any of the collapse values of a key
+  intersect with that desired state
+
+  this all *really* feels like taking the inner product between
+  states
+
+  let's consider then the kidnapping arc
+  a. friend kidnapped
+  b. location of kidnapping learned
+  c. friend rescued, and valuable knowledge is gained
+
+  arc.kidnap(new person("friend")):
+
+  friend = state.people.add("friend", {friend})
+  loc = state.locations.add("kidnap_location", {room})
+  1. friend kidnapped: desired state:
+    obj1 = state.copy()
+    obj1.people["friend"].status == kidnapped
+    then we always take the inner product with obj
+  outtro:
+    friend.location = loc
+  2. location of kidnapping learned:
+    obj2.locations["loc"].collapsed = true
+  3. friend rescued:
+    obj3.people["friend"].status != kidnapped
+
+  1.
+  Q1: __something sets friend kidnapped__ (fill this in)
+  now after 1.outtro, friend's location is in loc.
+  state.people["friend"].status == kidnapped
+  then state.dot(obj1)
+
+  2.
+  Q2: __something collapses state.locations["loc"]__
+  state.locations["loc"].collapsed = true
+  then state.dot(obj3)
+
+  3.
+  Q3: __player navigates to loc__
+  when state.location = loc,
+  then state.location.items contains friend
+  this means that state.actions() includes "resuce friend" now
+  when "rescue friend" is done, state.people["friend"].status != kidnapped
+  then state.dot(obj3)
+
+
+  Q0. the problem of outcome-steering
+    there is a desired state to compare with
+
+  Q1. the problem of select-event
+    how does friend status get set to kidnapped?
+      this is the problem of select-event
+
+  Q2. what collapses state.locations["loc"]?
+      how is this contextualized with the arc of
+      "this is the location of <state.friend>"
+
+  Q3. how does player navigate to location?
+
+
+--------------
+--------------
+--------------
+
+
+
+looking at vision.txt, it seems that a more straightforward
+approach is possible?
+
+initially, there are many possible things that can happen.
+event.driveby
+event.notify
+etc. whatever
+these events take the current state and return whether or not
+they are currently possible.
+event.possible(state) returns bool
+
+state will include various objects that implement interfaces
+so you just need to check which things support which interfaces
+and if you can assemble the proper things you can use them
+
+so really it boils down to something not unlike the interaction
+system in yogurt commercial.
+
+state needs to somehow enumerate a collection of objects:
+location
+objects in location
+player
+items in player's possession
+
+then the director polls each available type of event to see if it
+is possible with the present state
+
+events, when they occur, can poll values from state in a nimrod-fashion,
+those values are defined in a similar way as to events:
+a collection of possible return values given the current state.
+from pure random to something that draws upon existing structure.
+
+i think this is the isomorphism of structure i was intuiting
+events decide their possibility based on the state interfaces
+when an event queries state variable, it may either collapse,
+  or return its present value
+  collapse may be a general function of the state interfaces.
+
+
+e.g. director lists possible events.
+selects "enemy attack"
+part of enemy attack instantiating is the enemy needs to be given
+a weapon.
+this is a function of the state.
+if the state has present weapon-items, it is reported that the goon
+grabs the fireplace poker.
+otherwise, <goon> takes a weapon out of his <pocket | coat>
+Q: in this system,
+
+
+--------------------
++   structure      +
+--------------------
+
+containers
+  contains()
+  contains_recursive()
+
+state: container
+contains: player, scene
+
+player: container
+contains: inventory
+
+scene: container
+contains: items, entrances, exits
+
+events:
+  is_possible(items)
+  given a list of items, is it possible to instantiate this event?
+  the available items are state.contains_recursive()
+
+event takes the available items and knits them together.
+it has the logic for interfacing with each item's API:
+e.g. it knows how to reposition actors, make them pick up an item,
+wield it, etc.
+in this sense, the direction comes from the event, not the actors
+
+the event can describe itself, and provide this description to the player
+through the UI.
+
+now, given the state, we enumerate all possible events.
+then we select an event.
+
+further logic: how to decide event (director), how to arrange
+outcome (event)
+
+there can be individual actions taken by any item during the action
+phase.
+
+
+how does event.is_possible work? we have a list of items and we need
+to know if they satisfy the requirements of the event.
+event can be an object? a class?
+there is type checking involved here. we need to ensure that the
+items in question implement the necessary things the event needs to build
+the event.
+
+the class-subclass-tag problem is fine if we can just use interfaces.
+use mixins
+implement a test system that inspects each event type, then tests
+each of its inherited apis
+
+concrete example:
+event: bad guys enter
+requires: entrance
+location implements entrance:
+  location.entrance(character): character.name+" enters through door"
+
+concrete example:
+event: bad guy improvises weapon
+requires: weapon, bad guy
+location returns weapon:
+  location.provide_weapon():
+    return new weapon with name: sword
+                           location: hanging over mantle
+player contains weapon:
+  player.inventory.gun is weapon
+
+occur(bad guy, weapon):
+  bad_guy.get(weapon)
+  "bad guy grabs the weapon from weapon.location"
+
+* ideas:
+  it would be nice if objects can implement their own logic to decide
+  if they can provide a certain interface or not
+
+objects provide *services*
+an event requires a set of services:
+  1. provide instance of object
+  2. modify instance of object
+
+event: bad guy dies spontaneously
+  requires an event that will transform a character (apply death)
+    * bad guy falls down elevator shaft
+    * bad guy explodes when fire catches on propane
+
+chain:
+service: halt bad guy assault
+provided by:
+requires: bad guy status = dead
+          bad guy status = ally
+
+service: kill bad guy (person.status -> dead)
+provided by: location
+requires: bad guy
+
+
+desired outcome: bad guy assault is haulted
+well, we don't have a bad guy status = dead,
+but we do have a service that can provide that:
+kill bad guy, provided by location.
+
+a path finding system: BFS through a graph.
+identify all services possible in current state
+make connections
+then traverse from state to future state
+
+all services, regardless of their input.
+
+how are services specified?
+they have a function enabled(state)
+
+then to determine if service2 is enabled through the action of service1
+take service2.enabled(service1.process(state))
+now enabled, and process can be as detailed and general as required.
+
+now, locations and items have attached services.
+
+location: study has service: kill bad guy
+  takes state -> returns state but bad guy is dead
+
+goal (endpoint?) end conflict enabled function:
+  requires all bad guys to be dead (or others)
+
+then player can choose from possible services that can be
+enacted by player, in a unified system.
+
+(we can specify time intervals in state traversal, this allows
+us to identify a possible path for 2 to 3 steps from now. confirm
+path, then stop at first time step.)
+
+
+
+i think this will work, and services are relatively easily
+specified.
+questions/issues:
+
+1: difficult codifying all desired events in this way?
+  don't worry about implementation just yet.
+
+2: serializing this in a readable format
+
+3: tools for quickly finding information about state
+  (like unity getcomponent etc)
+
+4: some events don't change state: finding a letter, e.g.,
+  doesn't change state; it just presents a dialogue box
+  (maybe?)
+  it could just give the player an item, but i don't like that.
+
+5: integration with nimrod / state collapse
+
+
+how to address 4:
+  what is the goal of presenting information? it must
+  address a particular point, and identify e.g. a location or
+  person to find. this changes state in that sense

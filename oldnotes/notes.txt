@@ -1,0 +1,1449 @@
+the idea here is similar to adv, but as i worked on that game,
+i realized that it wasn't quite fitting the original idea.
+
+it had a lot of the correct parts, but still felt a little rigid
+and overprescribed.
+the other problem was that the data structures all demanded i build
+editor tools for each type of object, which quickly became
+unweildy. no unified system for the UI meant windows were getting
+out of hand.
+
+the basic idea was okay, but i intend to hash out the full vision
+in this document.
+i suspect the structure should be closer to a markov chain narrative,
+gradually filling in details of the plot and players as things
+develop.
+
+it's kind of like a state machine, where the various parts are
+in a quantum superposition. as the plot demands these aspects
+get filled in, the superposition collapses to one of the several
+possibilities that are still consistent with everything that
+came before.
+
+-----------------------------
+
+it starts with a context-free grammar that describes a story
+
+"tintin left the house and encountered {}"
+{a kidnapping, a drive-by shooting, a mysterious stranger}
+
+this tells a story of the sort we would like to flesh out.
+there are several major steps:
+1. it's not fully context-free
+2. it's more than just a string
+3. it's interactive
+
+
+1. choices within the context-free grammar can "stick" and become permanent: before a villain is chosen, {villain} resolves to {badguy1, badguy2, badguy3} but after it is chose, {villain} resolves to just {badguy1}.
+  1.a. resolving instances may resolve other instances (bad guy organization) or may restrict the possible values of other instances (badguy1 only does certain plots, for example)
+2. we need to generalize the idea of the context-free grammar to a system that can work on instances of objects.
+  instead of {key} resolving to {value1, value2}, it's more like (events??) that resolve to (function calls??)
+3. elements of the grammar may be resolved into player choices.
+
+so {key} evaluates with state information
+
+-----------------------------
+
+a. describe a game sample
+start: you are walking down the street.
+now there are many things that can happen. probably the player
+makes a choice first-- but there could be some things that happen
+even before a choice is made (they have initiative)
+
+you can walk, or duck into a building, or encounter someone
+where you go when you walk is undecided until you walk: it is
+randomized
+
+so for instance, resolving such a superposition scene now requires
+that we name the villain. the villain has not yet been named, so
+we must pick one. from now on, that is the villain, and future
+events will be selected so as to be consistent with that.
+this is the simple example
+
+but there's more to it: not just a randomization and stored
+random values, but some sort of state machine consistent
+history.
+
+i think the key is in how values are switched back to superposition
+(probably more short-term variables like scene or beat)
+and how to define possible events that depend on multiple
+conditions
+
+it is like we take the space of all possible events
+and we marginalize over the variables that are in definite
+positions.
+
+so it's like a state machine, with many possible branches to new
+states, and we disable certain branches if they require a
+specific state variable.
+but if they don't explicitly require a certain state, then allow
+the transition with some probability
+
+now the question becomes: how to specify this business
+what data structure / flow structure?
+states and transformations: transformations are actions like
+walk, etc.
+
+what sort of more complicated transformation?
+e.g. if you are taken captive. either you know who did it, or you
+do not. forms of escape from a situation? intention of goons?
+
+
+-------
+11/20
+start with simple minimal viable product and then expand the idea.
+state variables: villain, villain goal
+changing state / collapsing a variable should have an attendant action
+or: some actions collapse state?
+it feels like:
+actions have required state variables
+  actions can collapse state variables
+state: player on street
+action1: abducted by car (roll for effect, etc)
+action2: see suspicious man
+
+Q: what are the player's choices and how do they relate to these actions?
+does just existing in the street give them an opportunity to happen?
+is it:
+player act | game act | player act | game act ?
+A
+player action: walk out door onto street
+game action: collapse location state (street1, street2, etc)
+player action: walk down street
+game action: action1 / action2?
+
+B
+player action: walk out door onto street
+game action: collapse location state (street1, street2, etc)
+game action: action1 / action2?
+
+if the game constantly overrides your action to abduct you into a car, that's less fun
+instead, those actions should take place after your action, always
+you change the state, then the game can change the state.
+scenario B: see if something *can* happen from current state after player action happens.
+
+>player is in house
+>possible moves: street, stay
+1. street
+  describe: moves into street (collapse location state)
+  state: street1 | <villain> | <vmotive>
+    possible events:
+      a. revealing car abduction
+        collapse villain
+      b. suspicious sighting
+        set up a chase
+2. stay
+  describe: house
+  state: house | <villain> | <vmotive>
+    possible events:
+      a. revealing telephone call
+        collapse villain
+      b. revealing brick through window
+        collapse vmotive
+
+
+let's take scenario 2a:
+  what makes 2a possible?
+    * location has telephone
+    * <villain> is superposed
+  how does 2a happen?
+    game decides to enact 2a (how?)
+    "the phone is ringing. answer? [y/n]"
+    Answer: "this is {villain}. youd better watch out"
+      <villain> -> {villain} (how?)
+  does 2a happen if villain is known?
+
+  in providing the feedback of Answer, the event needs to query the global state for villain.
+  global state sees villain is superposed, so collapses <villain> into specific state {villain}.
+  somehow, the event that creates a text description and offers choices queries specifics from the global state
+    this can collapse state variables
+
+what is the structure?
+  1.event.do(state)
+  2.state.do(event)
+  probably 1. can query state as needed
+  . this can change state
+
+
+how is it abstracted?
+
+
+cracked video point about in a movie if you go to the bathroom you'll be attacked or overhear information: this is the goal, to create a game / series of events where everything (can be) made significant, like a story being told
+
+further idea re: structure: it would be defined like a context-free grammar, only with placeholder variables that collapse into a state when queried.
+
+
+
+---------
+
+thinking over more, i feel like there are definite parallels
+to nimrod. it should be structured like nimrod, but we can
+distinguish different bits and pieces like so:
+
+{villain.name}
+{villain.org}
+{villain.henchman}
+
+{person}
+{person.civilian}
+
+{location}
+{location.icy} (?)
+
+{item}
+
+{item.weapon}
+
+{sequence}
+{sequence.trap}
+{sequence.kidnap}
+{sequence.assault}
+
+there should be ways to reference different things like this
+syntactically.
+
+everything can be encoded as text, like in nimrod, but
+with specialized fields.
+this allows me, when writing a description of street:
+
+desc:
+" a {cobblestone|paved} road"
+items:
+{0.25|item.weapon}
+{0.25|item.decor}
+{item.decor}
+pre-event:
+None
+post-event:
+None
+
+dots indicate increasing layers of specificity.
+how do we describe this at the data level?
+series of nested folders?
+
+all elements should have a ToString() aspect
+
+----
+
+scene structure: pre-action and post-action slots
+
+make everything as generic as possible, so we can place
+items, people in such slots:
+it is up to the game how to interpret the fact that
+an item is a pre-action event
+
+it feels like this stuff shouldn't be handled in the nimrod
+data, but used instead by the director to keep the plot
+moving along?
+a post-event could include witnessing something suspicious,
+for example.
+
+----
+
+
+we must also address wavefunction collapse. how do we model that
+and how do we represent it at the data level?
+
+what does this look like?
+before a villain has been specifically mentioned in the
+script, he / she is potentially any of the villains.
+
+other details might emerge first: name of villain organization
+("the secret ninjas" or whatever), the villain's plan / object
+of desire (attempting to kidnap the princess)
+and these provide clues for the player
+
+then comes the moment after you interrogate a captured henchman:
+"I'm working for {villain}!..."
+and now <villain> must collapse to a definite character:
+carmen sandiego, or whatever.
+
+now, all future references to villain are carmen sandiego:
+{villain.firstname}
+{villain.lastname}
+{villain.appearance}
+
+does this related to levels of specificity?
+
+i think it should be such: if a.b.c, and we collapse b,
+then c is collapsed too.
+
+so maybe it was a structure like
+
+villain.appearance
+villain.plan
+villain.organization
+villain.organization.flag
+villain.organization.uniform
+villain.sex
+
+plot.villain.plan
+
+collapsing these does not collapse villain.
+  collapsing organization, though, collapses flag
+i really want to put some sort of structure to this.
+
+(maybe?)
+
+also:
+some things don't collapse. descriptive text,
+and random items, etc. so we need to distinguish here.
+
+also:
+collapsing villain might collapse other elements as well.
+{villain} -> carmen sandiego might then indicate that the
+villain HQ should be somewhere specific to carmen, for example.
+
+there is some sense that collapsing the villain can happen
+anywhere / by request of any element.
+for example, a pre-action event has the player spot the
+villain ducking into an alley.
+before collapse, this is a random choice between villains.
+after collapse, it will be the villain you already know about.
+
+now:
+villain.sex:
+if this is collapsed before villain, say you find DNA or something
+in one scene. that collapses the villain's sex, while still
+leaving the identity undefined.
+then, when villain is collapsed, it must be to one that
+matches the collapsed sex.
+
+there is a sense that things should be left up in the air
+until something forces a specific choice,
+e.g.
+we discovered that villain is a woman
+we discovered that the tremont street gang is after the rutan-tutan diamond in the city museum
+now, we go to museum and encounter {villain} and the game goes
+to describe villain, e.g.
+" you see a person of appearance {villain.appearance}"
+and that forces the collapse of who the villain is
+
+now earlier i said villain.appearance shouldn't collapse {villain
+}
+so which is it?
+
+--
+villain:
+carmen_sandiego.txt
+NAME:
+Carmen Sandiego
+firstName:
+Carmen
+lastName:
+Sandiego
+sex:
+female
+organization:
+any
+appearance:
+appearance.rich
+appearance.spy
+
+now, when the player goes to collapse {villain}, knowing
+that the villain is a woman, what happens?
+villain.sex is a constraint.
+villain.appearance is not yet set.
+
+if we start playing with constraints,
+
+----
+
+
+An instance $object may start out looking like this:
+
+$object:
+{object}
+
+When greater specificty is needed, it may go like this:
+player looks at $object.
+{object} -> {item}
+
+$item:
+name:
+{item.name}
+desc:
+{item.desc}
+
+after description:
+
+$item:
+name:
+baseball bat
+desc:
+a wooden stick
+
+**or something.... item instances may hang around for a long time
+with their fields uncollapsed.
+we can move $object from room to room without knowing what it
+looks like.
+it won't look like anything until something / anything queries
+its "description" field**
+
+
+-----
+
+proof of concept:
+
+make a game demo where you can walk down the street
+and get abducted by a randomized villain
+
+there should be an "info / notebook" menu where you can
+see what the player has learned so far about the villain
+& etc.
+
+-----
+
+i'm not so sure about the nested business:
+villain.name
+villain.sex
+villain.appearance
+
+if the rule of thumb is to not collapse until absolutely
+necessary, then go with that.
+
+so $villain state:
+
+-name
+{villain.name}
+-appearance
+{appearance.rich}
+{appearance.spy}
+-sex
+male
+female
+-first_person_singular  *note: me / my
+-third_person_singular  *note: he / she
+-possessive             *note: his / her
+
+
+collapsing name collapses sex and pronouns
+collapsing appearance collapses name
+
+
+it seems there should be a bunch of instances of general types
+of object, and more can be created at runtime.
+for example:
+
+a new game is started. the player character is
+instantiated.
+part of start involves putting the player character in a room.
+so
+
+ - $room1 -
+
+when the player occupies $room1, part of the general update cycle
+will query $room1 for description.
+this triggers collapse.
+exits to other rooms instantiate new room instances
+the state becomes:
+
+$room2 - hallway - $room3
+
+the key things:
+  instances are instantiated when functions are called
+    and are made as necessary to fulfill the purpose of the
+    function
+  in other words, function/creations are phrased in terms of
+    "make this happen", e.g.:
+    "make player occupy a room"
+    "make the room exitable"
+    "describe the room"
+    "entwine the player in the villain's plot"
+    "bring the player to confront the villain"
+
+  all of these function/creations can be called from any state:
+  from fully undefinedd to fully defined.
+  things are then created and / or collapsed as necessary.
+
+  the rules for instantiating things are the specific bits with
+  situation-dependent logic.
+  collapsing superpositions is fully generic with pre-defined
+  universal logic.
+
+so, instances must have a generic method for requesting things.
+instances will have references to other instances (items, rooms)
+and may sometimes need to set these upon instantiation
+
+we build up instantiation and functor-creators to higher and
+higher levels of abstraction to the point where we define the
+game on the highest levels
+"start player in plot"
+"give player objective"
+"entwine player in villain plan"
+
+"give player objective"
+  this could be several things:
+  macguffin
+  loved on in trouble
+  loved one missing / scavenger hunt
+
+
+----
+
+for now, let's worry about specifying things for the proof
+of concept.
+
+start:
+  1. create $player
+  2. create $room
+  3. put $player in $room
+
+what does 3 entail?
+<player> is subclass of <item> and as such, has
+a property, $location.
+
+
+like all properties, $location is a superposition.
+if it were queried before being set, it would know to simply
+collapse into a specific location.
+
+so $player is created.
+the game loop starts.
+"describe your surroundings"
+  the function calls $player.location.get as part of getting
+    a reference to location to get its description
+
+  $player.location.get sees that $location is an undefined
+  superposition, so it collapses $location into a specific room
+    (there can be rules about what is included in the wavefunction)
+  so now $location is
+
+
+
+upon creation, is $player.location None (unset), or
+simply fully superposed?
+or do items all have the option of simply pointing to
+another instance, like they're a variable?
+
+
+i want to write this in c#.
+
+--------
+
+
+affecting superpositions:
+{villain} -> {villain.spy}
+
+moving to greater specificity is acceptable
+
+
+the issues with partial collapse:
+specifying dependencies (they are complex and relate sets of eigenvalues)
+then, when collapsing the whole state, you need to find
+a template that matches the partial hits
+
+there's tension between the template concept
+  (data file specs for {villain}, etc.)
+and the partial collapse: if all parameters are independent,
+then we don't need templates to match, just let the remaining
+parameters collapse.
+
+{villain}? or $villain
+
+what specifically is the tension here?
+supposing partial collapse approach:
+we've queried sex and organization
+
+$villain
+-name: {name.villain}
+-appearance:
+{appearance.villain.spy}
+{appearance.villain.rich}
+-sex: female
+
+and now we collapse villain to a particular template? no...
+that doesn't make sense: $villain is an instance, not a template.
+there's nothing to collapse, except for the individual
+properties.
+when it comes to that, then, there are a few things:
+1. collapse of a generic property like name is constrained
+  by the particular value of other things: sex, org,
+  potentially anything.
+2. collapsing some things collapse other things.
+
+it is kind of like a state in hilbert space.
+when we collapse $villain.sex, it moves us to the subset of
+villain space with male or female properties.
+
+so: perhaps what happens is that templates describe all the possible
+combinations of properties (male CIA, female CIA ; male KGB, female KGB)
+the key thing is that certain combinations of properties are
+excluded.
+if villain space is divided in half by male / female, then
+villain should be decomposed into villain.male and villain.female
+collapsing {villain} collapses to an instance of
+{villain.male} or {villain.female}.
+specifically, collapsing name, appearance, or sex
+
+
+can it be stored as a directory structure? what
+are we storing exactly?
+$villain
+-org
+-sex
+  -name
+  -appearance
+-inv
+
+
+villain
+  |-org
+  |-inv
+  |-sex
+    |-name
+    |-appearance
+
+first, inv. will have to point to something in items
+
+*people
+  {villain}
+
+{villain}:
+)villain.male
+)villain.female
+
+{villain.inv}:
+){inv.luxuries}
+){inv.spy}
+){inv.wealthy}
+
+$villain.male:
+-org
+{org}
+-sex: male
+  -name
+    {names.male}
+  -appearance
+    {appearance.male.spy}
+-inv:
+  {villain.inv}
+
+
+it does feel like theres something really clever, elegant,
+and powerful to leverage here with files and structure.
+if i get it right, there'll be a lot of good and flexible
+and powerful generation.
+
+1. how much is it nimrod-like?
+2. what do files look like?
+3. defining {villain} versus defining $villain
+
+let's examine inventory specifically.
+all lines are evaluated
+$inventory
+  {weapon.melee}
+  {weapon.gun.pistol}
+  {0.25| grenade}
+  {0.25| grenade}
+  canteen
+
+types of definition:
+1. object / class definition / template
+  multiple properties
+2. object / class nimrod key
+  returns an instance of object / class
+  evaluates to one of several possible instances
+  points to a file?
+3. nimrod text
+  does not evaluate to a file or an instance
+
+we are talking about three different kinds of thing:
+files
+  separate descriptions of nimrod logic and instance definitions?
+object instances
+  each item in a list is evaluated
+nimrod-style keys & values
+  only one item in a list is selected at random
+
+instances like {villain.male} and {villain.female}
+are basically values under the nimrod key {villain}
+
+can it all be flattened into one syntax?
+#villain
+[
+sex: male
+  appearance: {appearance.male}
+  name: {name.male}
+inv: {inv.spy}
+org: {org.villain}
+]
+[
+sex: female
+  appearance: {appearance.female}
+  name: {name.female}
+inv: {inv.spy}
+org: {org.villain}
+]
+
+
+option II above resolves to:
+$villain: instance
+$villain.sex -> "female"
+$villain.sex.appearance -> {appearance.female}
+$villain.sex.name -> {name.female}
+$villain.inv -> {inv.spy}
+$villain.org -> {org.villain}
+
+nimrod keys will evaluate to strings or objects.
+the language is not quite general yet, as properties should
+  also be variables like values
+in other words, any object can take on any property
+properties should be probabilistic like nimrod
+
+
+something in the game code refers to the villain and
+we want to instantiate a $villain.
+
+this doesn't mean we have {villain} somewhere... unless our
+code takes a much more advanced turn
+(how does villain get referenced anyway??)
+
+$villain is a class, it has several properties
+those properties can be nimrod keys or they can be fixed by
+the definition of the class. (the property definitions then
+are general nimrod syntax)
+
+this means: {villain} evaluates like nimrod syntax too; it's
+just more complex than a string.
+
+if we want villains to divide up between male / female, then
+we can make two values for {villain}, a male and a female,
+with their fields populated accordingly.
+
+problem: does this lead to much duplication?
+e.g. instead of just male & female, cop spy and terrorist,
+we now have to define:
+male.cop male.spy male.terrorist
+female.cop female.spy female.terrorist
+
+#villain
+-name: {name}
+-org: {org}
+
+#villain
+-name: {name.terrorist}
+-org: {org.terrorist}
+
+Basically, $villain does not need to be defined by
+only one set of nimrod keys.
+we can define many different kinds of $villain under the key:
+so that parameters can *co-vary*.
+^ this is part of the key, covariance
+
+sex (n=2)
+we need names to covary with sex
+also, appearance needs to covary with sex.
+
+consider the space of names:
+it divides into two based on sex.
+it divides into (n) based on type (terrorist, spy)
+so there are n * 2 sets of possible names
+
+for type, like "spy", it would be nice to group a bunch of flavor
+text under a "spy" file
+spy.name
+spy.apperance
+spy.inv
+etc.
+but we don't exactly want to subdivide files by male / female.
+only certain aspects of "spy"
+  appearance
+
+files: define
+  just keys
+  all subsets of keys
+  one file per object type?
+
+so how do we accomplish this? possibilities:
+1. "spy" is a file and it defines
+{name}
+{appearance}
+{inventory}
+{organization}
+since "spy" is a flavor of $villain, its properties can know to query the properties of a villain: sex, etc
+  "spy" may apply more generally than just $villains, it could flavor, e.g., rooms & things
+2. "spy" is a folder and it contains multiple nimrod definition
+files.
+  one file per object type?
+
+
+
+villain.txt:
+$villain
+-name: {name}
+-sex: {sex}
+-appearance: {appearance}
+
+the key thing is, though, is that we want certain relations
+between parameters.
+right now, {name} could have flavor: spy, caveman, etc.
+{appearance} could have flavor: spy, caveman, etc.
+
+what you end up with is a frankenstein monster.
+you want to restrict to specific possible combinations
+this can be accomplished by specific values of the $villain key.
+
+now, when it goes to evaluate {appearance}:
+
+#appearance
+sex:male{
+  {appearance.male}
+}
+sex:female{
+  {appearance.female}
+}
+
+how about:
+#appearance
+  {appearance-androgynous}
+  sex:male
+    {appearance-male}
+  sex:female
+    {appearance-female}
+
+when we collapse {appearance}, it chooses accordingly.
+a switch statement.
+
+the only problem then is parsing the dependency relations.
+in the above case, {appearance} doesnt need to collapse sex,
+because there's an alternative.
+
+#appearance.{sex}
+#appearance.male
+  male-value-1
+  male-value-2
+#appearance.female
+  female-value-1
+  female-value-2
+
+what about encoding multiple dependencies?
+
+#appearance.{sex}.{type}
+#appearance({sex}, {type})
+#male
+  #spy
+    male-spy-value
+  #terrorist
+    male-terrorist-value
+#female
+  #spy
+    female-spy-value
+  #terrorist
+    female-terrorist-value
+
+one thing to take away here is that the "nesting" of those
+values are truly arbitrary
+
+probably we'd handle {type} by flavor modules, too
+
+without getting too fancy, this is probably all stuff i could
+handle by creating more value for {villain}. that takes care of
+the co-variance.
+just allow nimrod dicts to be extended or overwritten (flavor modules)
+and we're also letting a little context creep back into the
+grammar. but that's ok.
+
+the real question is how to denote collapse relations.
+appearance collapses sex *because*
+
+
+1. denote collapse relations
+2. nimrod now defines *objects*
+3. allowing context when parsing
+4. how are properties queried
+  (best idea: use pythons __get__ etc interface)
+
+when, how, where, and what does the . mean in these keys?
+
+1. new syntax is required
+
+2. this is the key concept
+
+3. context: i think the natural thing is to assume that
+all is ultimately tied back to an instance of some object,
+and we can use that object's namespace when deciding how to
+pare {name}.
+new syntax will need to be created, no way around it.
+in some ways, creating multiple values, allowing flavor modules,
+and allowing switch statements all address the same issue.
+
+consider old nimrod, in true context-free form: i could have
+implemented "global variables" in a way by splitting all things
+into n versions for each of n types and then choosing a subtree starting point
+exclusive to one type at the start, and accomplish the same goal;
+but the *Hope* here is that i can come up with a way that's
+easier to write and keep track of.
+
+e.g. {story} - {sentence}
+{story.sci-fi} - {sentence.sci-fi}
+{story.fantasy} - {sentence.fantasy}
+
+this sucks, because it makes for a lot of duplication of effort.
+the structure of {sentence} will be identical, but one will
+simply use sets of nouns and verbs that evaluate to sci-fi or
+fantasy flavor.
+the goal is to have just one kind of {sentence}, to avoid
+repeating code, one type of {noun}, and {noun} simply
+evaluates to something different depending on genre type.
+
+
+
+2. nimrod is defining *objects* now. how does this work?
+they're specific types of object.
+they collapse when queried, so they must store their
+current state:
+{villain} to $villain ?
+if i am a nimrod key, collapse first, then return my reference
+
+magic methods http://farmdev.com/src/secrets/magicmethod/index.html
+
+why is it critical that things remain uncollapsed until
+specifically referenced?
+because:
+  1. progress through the story may depend on how much
+    is known
+  2. collapse of a plot point may depend on the current state?
+
+what was the vision there, really?
+that plot developments and events and things are truly in that
+sort of context-free markov chain existence
+so we can schedule revealers?
+
+how is any of this different from just a randomly generated
+story?
+the idea is to take the current state, with the player
+and location and items and what we know about the villain and
+the plot,
+and to then randomly choose an event to occur, from the list of
+possible events.
+
+i suppose that list of possible events takes into account
+whether or not we've discovered the villain's identity or
+whatever...
+this sounds right, and it helps, because it means a story can
+unfold piecemeal. we don't jump straight to the end, because
+first we have to set up and establish all the pieces, and as we
+do, the realm of possibilities shrinks
+
+i think the idea is that it's more than just collapsing the
+possibility- collapse is a clear event.
+the events that happen before you collapse the villain's name
+and the events after are different.
+
+this is the *only* way it could make sense.
+that, and the broader sense of "we slot this partially-undef'd
+structure into this process and it becomes more defined"
+
+the point is, the way the world evolves *changes* as the thing
+becomes more defined.
+
+"if you enter a bathroom, you'll either overhear something
+important, or kill someone, or get ambushed"
+there are all these possible next things that can happen,
+and the projection of the current state onto them changes as
+the state evolves.
+
+if the goal is undefined, then events that set up the goal
+are possibilities. once the goal is known, those events stop
+being possible.
+
+it's a quantum markov chain, exploring subspaces of hilbert
+space.
+
+if you throw a mostly-undefined state into "generate an attack
+on the player"
+it will be different than after you've determined the villain
+and the gang they lead, etc.
+therefore it's important that we allow peeking values to see if
+they're defined, and to separate querying from collapsing.
+
+now the important thing is that, over everything, there is the
+story teller, and it should be able to craft a narrative that
+more or less fits acceptable parameters.
+
+if we say "player gets attacked" the situation is different
+before we know the villain and organization.
+and it can lead to different results.
+
+this means attack() is a function that takes a state
+attack($state)
+creates new events and updates $state
+this is the key thing:
+  we know how to launch an attack whether the player is
+  walking down the street, or in the house
+so we can drive the narrative structure as needed.
+
+
+i envision general sorts of ways that things can "plug in"
+to a general scene, depending on what the plot needs to come
+next
+
+location: bathroom stall
+  possible scenarios:
+    overhear information
+    ambushed by attacker
+
+is it more like:
+  the game knows how to use overhearing as a mechanism to supply information
+  if it needs to supply information, it can use overhearing
+then:
+  given locations may specify ways you can overhear.
+
+now, if the game wants to supply information, it can always see
+what options are enabled in the current state
+  overhearing
+  finding a note
+  receiving a threat
+the game may see there's no possible way from the current state
+for the player to overhear, find a note, or receive a threat,
+so it may switch what happens next, or wait for the player
+to get into a situation where it can supply information.
+
+
+* impart information:
+  new location
+  new person
+  location of person or item
+
+so, it feels like maybe i need to specify from the broadest
+to the most specific.
+plot structure markov chain -> specific events to enable
+actions -> instance of specific event
+
+the state exposes several possible generic types of events, and
+if the director can use an event to further the plot, then
+it can instantiate the event, filling in the details
+
+events are defined as input, output?
+
+e.g. next plot point: person x needs to die
+player and person x are standing in apartment
+
+state lists current possible events
+plot has current possible next steps
+then it needs to connect state -> event -> plot step (outcome)
+
+so plot desires possible outcomes,
+state specifies possible events
+and there needs to be glue to allow outcome from event
+  this glue belongs to event:
+  event knows how to result in multiple outcomes
+  event exposes all the possible types of outcome it can produce
+
+Q: how does plot get constructed?
+  broadly: rising - climax - aftermath -> step
+  fractal structure
+
+instances of structure:
+  kidnapping:
+    -discover friend missing
+    -discover location of friend
+    -battle a squad
+    -rescue friend
+  threat ambush:
+    -receive threat
+    -attack from group
+    -dust settles
+  imprisoned
+  chase
+  puzzle solve
+instances of step:
+  -you learn who the villain is
+  -you learn what the villain is after
+  -you learn of a powerful artifact
+  -you learn the location of ___
+  -you acquire an item, tool, or key
+
+
+
+Q: how does the event popup sequencing work?
+  [you find a note on the ground]
+  [the note reads ...]
+
+  [there is a note in the wallet.]
+  [the note reads ...]
+
+Q: there was something about events querying state?
+  and some sort of syntax to these things
+
+Q: specifying events?
+  events specifying outcomes?
+
+
+so, i think the way it works is:
+  collapse plot beat
+  plot generally indicates the next required outcome
+    -discover friend missing
+    -discover location of friend
+    -battle a squad
+    -rescue friend
+so as the player is walking around, looking for something,
+there's a good chance an event will happen in one way or the other
+that gives the required outcome
+
+
+now, part of the original vision is that there should be a lot
+of graceful glue to stick element a into situation b without
+much planning or foresight.
+
+if you need goons to enter a scene
+if you need item to enter a scene
+this might be as simple as seeing if the state supports
+  nimrod keys for a particular thing
+
+and on this basis, we had the idea of
+$state.new event : friend_is_kidnapped
+and then it seems like we're not waiting for a certain type
+  to become *possible* but instead we've made glue so that
+  everything can be handled gracefully
+  the idea, as in my AI, is that there is a high-level goal
+  and it gets translated down into specifics in a flexible
+  manner.
+  this certainly seems possible, and is like the system i had
+  outlined above:
+  in this case, enqueue the desired outcome
+  and wait for that outcome to become possible.
+
+  the sense, then of handling everything gracefully, simply
+  results from implementing as many types of events as possible
+
+  so: events are machines that know how to bring about outcomes
+  instead of every state knowing how to bring about every outcome,
+  which is insane,
+  events instead act as glue that bring about desired outcomes.
+  events know how to have multiple outcomes,
+  states know how to have multiple events,
+  and so there's a greater chance we can find a way to have
+  the desired outcome.
+
+  state -> event -> outcome
+
+enqueue desired outcomes, with secondary outcomes possible,
+if the first is not possible for too long / randomly /
+becomes impossible
+
+we can choose next desired outcomes simply by trying to move
+to a state from which we know there is more outcomes (higher entropy state)
+possible in the end: maximize freedom of future movement
+
+
+    state
+    /     \
+outcome2  outcome3
+  |         |
+state'    state''
+
+event follows from state
+outcome follows from event
+event changes state
+
+repeat until win or player dead
+
+
+now, how can event depend on more than the location?
+  event needs to query the state to see which micro-events
+  it supports?
+  what interfaces it supports?
+    create item
+    create person
+    create hazard
+  and event stitches these sorts of things together?
+
+then we know which events are possible from the present state.
+those possible events can describe their possible outcomes
+then if we want outcome o1, we can enumerate all paths
+p_i = (e_x, o1) and choose one at random.
+
+outcomes know how to change state
+
+so, one possible thing, enumerate all the possible outcomes
+from a state, and all the next-order states that are possible:
+look a step ahead, like a chess game
+opens the possibility of looking two steps ahead
+then choose a step according to some criteria:
+  * to help the player
+  * to help the villain
+  * to allow for an interesting ending
+it could be a general function of things, even changing according
+to an early-game, mid-game, late-game strategy:
+first, give the player lots of resources, then lots of
+challenges, then narrow possibilities down to an ending
+
+so, from state, we can do a BFS to find paths over outcomes
+to the desired next state
+
+
+
+
+design goals:
+
+1. should be as simple as possible
+  should go without saying, but this is a complex structure
+  and it needs to be held in mind.
+
+  aids in the satisfaction of corollary:
+  a. should be as simple to create / edit as possible
+    this avoids the problem of needing an editor or some complex
+    tooling, if at all possible
+
+2. should exploit some natural expression as a
+  (state machine?) (context free grammar?)
+
+  there's something powerfully exploitable as its structure,
+  and this requires more research to understand.
+
+3. easily extensible
+
+
+specifics
+
+given state, desired event, and outcome, how does it work?
+
+how is event structured and specified?
+how does it achieve the specific text?
+how does that text interface with the player / UI?
+
+
+so the main developments here are
+either
+  1. set the desired next outcome / possible next outcomes
+    and wait for them to become possible
+  2. enumerate the possible outcomes and select from them
+
+1. might be easier to code, from a plot-strategic standpoint
+2. is more in keeping with context-free grammar structure:
+  we don't have a big picture, only a local one
+    the outcome isn't set in stone
+  harder to code from a strategic standpoint:
+    how are we to know specifically which next outcome?
+      it's all kind of meaningless, especially since outcomes
+      are kind of granular and probably only make sense in
+      the context of a larger plan
+      if there is enough overlap between plans, it can keep
+      several in play?
+
+    why not go big and make a hot sophisticated algorithm
+    instead of an obvious and simple one? it could mean the
+    difference between good and great.
+    but added complexity is added complexity.
+i can, potentially, implement one or the other
+
+Q. how does state -> event -> outcome relate to the
+  collapse mechanic, and if we know outcome, how can state
+  collapse be random?
+
+A. outcome must necessarily be generic. everything must be
+  coded on an abstract level, and implemented only in specifics
+  later, which is the point of the collapse mechanic as well
+  also, state superposition / eigenstate is part of state which
+  defines the allowed events
+
+or: maybe state collapse happens as required upon events, and
+the specific sequence of events and things doesnt care at all
+about
+
+suppose:
+state:
+  location: house
+    desired outcome: learn of artifact stolen from museum
+
+state supports?
+check all types of event
+  events:
+    find note
+    read newspaper
+    receive phone call
+    attacked by person
+    brick through window
+    kitchen ignites
+  (obviously, these are motivated by the types of outcomes
+  i currently envision)
+
+so, who handles "find note"?
+state? state is just a variable of some kind
+
+
+it doesn't make sense for next outcome to be purely local,
+does it?
+the very idea of a plot structure implies some sort of global
+structure right
+
+tintin structure:
+  event-event-event-miniboss intro-event-event-miniboss fight
+
+this *could* be a random markov chain style process
+when you open a package and find an item, it could be any
+  number of things
+milestones could be hit when certain elements of the state
+  get set
+
+three possible approaches:
+1. purely local informed by looking ahead to outcomes
+2. setting possible next outcomes and wait until they
+  become possible
+3. pure markov chain with state events or something
+
+the cool thing is, i can implement any number of different
+directors / director styles
+
+development: C# mono (i want it to have typing, and use omni
+sharp)
+
+what is the structure? there is a director
+a control loop for input / output, game set up,
+and the glue
+state
+events
+outcomes
+
+how would it be set up?
+state.events()
+
+plot.outcomes()
+
+for each state.event:
+  if event supports outcome:
+    add event to possible events
+
+Q: when do events happen?
+from list of possible events, each event may have its own
+trigger
+trigger could be: on action, on item usage, after player action,
+on exit, on enter
+
+* player action
+* after player action events
+  update state according to player action
+* after action events
+
+if action is leave:
+* on exit events
+change room
+* on enter events
+
+to start, the loop could be simple:
+1. present actions
+2. player chooses action
+* interrupt action?
+player action
+* after-action unless player is leaving?
+
+
+state.actions()
+state.events()
+director.outcomes(state)
+configure events with outcomes?
+or: when event is triggered / outcome happens,
+  check the director's list of outcomes and try to implement
+  one of those.
+  if we don't support any, pull a random supported outcome.
+
+we need to allow for events to happen that are random / not
+triggered by player action, as well as events that are the
+direct result of the player's action.
+this means that when state is changed, and possible events
+are calculated, it'll set up some events that may fire
+* before player acts
+* after player acts
+
+let's use python until we have a better grasp of C# command
+
+now, how do we specify events and outcomes and things
+bringing it back to the nimrod files
+
+start by defining the location
+State.location
+
+location has a description
+  -description
+  -name
+  -connections
+
+description and name are text
+connections are links to other room instances
+
+location: street
+  actions:
+    * look in window
+    * drive-by shooting
+location: post office
+  actions:
+    * mail a letter?
+    * etc.
+
+start: new state
+prompt: describe location: state.location.descr
+  -> collapse location
+    -> location collapses descr
+    -> describe exits collapses exits
+        -> exit 1: room 2
+
+exit 1: collapse description (door, etc)
+  don't collapse room2 until navigated
+    exit descr. includes
+      -description
+      -possible types: {apartment, street}
+
+here's a good test case: we should be able to specify the list
+of exits in the same way as a list of symbols in a nimrod dict
+
+  -exits:
+    {door1}, {door2}
+    {0.5| fire-escape}
+    {0.25| attic-door}
+
+then later,
+#door1
+  -desc: {door-desc}
+  -name: {door-name}
+  -leads:
+    {street}, {forest}, {hallway}
+
+#door-desc
+A sturdy wooden door
+An iron gate
+
+Note the difference: door object has components, so we only
+define *one* template, and then the multiple instances are
+handled by randomized instantiation accordingly
+
+on the other hand, the {door-desc} definition is just a list
+of strings; anything that is just flat collection of symbols
+is treated as a random choice from that list;
+comma-delimited list on one line is equivalent
+
+but its different for exits: it's several lines and each one
+is evaluated and added to the list
+then there's a chance that a line may not be included
+
+notes:
+  for door.desc, door.name, we end up defining a lot of
+  {door-desc} and {door-name} symbols
+  lots of redundancy here in naming convention
+
+now when we instantiate #room
+the code needs to create a room object, and then set the part-
+icular parameters by parsing the nimrod file
+
+this sounds good
+is there anything about
+  list vs. singular
+    (compare -exits vs #door-desc)
+  #door
+  #door.desc
+  #door.name
+
+syntactic paradigms:
+  1. select one from this list
+  2. construct a list with the following elements
+  3. populate the fields of a particular type of object
+    with the following sets of (1) or (2) as required
+  4. allow keys to refer to instances of objects:
+    {room} is sort of like a generic nimrod key {noun}
+
+
+
+
+
+

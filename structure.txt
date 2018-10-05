@@ -1,0 +1,72 @@
+--------------------
++   structure      +
+--------------------
+
+a path finding system: BFS through a graph.
+identify all services possible in current state
+make connections
+then traverse from state to future state
+
+all services, regardless of their input.
+
+how are services specified?
+they have a function enabled(state)
+
+then to determine if service2 is enabled through the action of service1
+take service2.enabled(service1.process(state))
+now enabled, and process can be as detailed and general as required.
+
+now, locations and items have attached services.
+
+location: study has service: kill bad guy
+  takes state -> returns state but bad guy is dead
+
+goal (endpoint?) end conflict enabled function:
+  requires all bad guys to be dead (or others)
+
+then player can choose from possible services that can be
+enacted by player, in a unified system.
+
+(we can specify time intervals in state traversal, this allows
+us to identify a possible path for 2 to 3 steps from now. confirm
+path, then stop at first time step.)
+
+
+
+i think this will work, and services are relatively easily
+specified.
+questions/issues:
+
+1: difficult codifying all desired events in this way?
+  don't worry about implementation just yet.
+
+2: serializing this in a readable format
+
+3: tools for quickly finding information about state
+  (like unity getcomponent etc)
+
+4: some events don't change state: finding a letter, e.g.,
+  doesn't change state; it just presents a dialogue box
+  (maybe?)
+  it could just give the player an item, but i don't like that.
+
+5: integration with nimrod / state collapse
+
+
+how to address 4:
+  what is the goal of presenting information? it must
+  address a particular point, and identify e.g. a location or
+  person to find. this changes state in that sense
+we could include player's information (known locations, persons) in
+the state.
+
+but: a general method to provide information: how does this work
+with BFS?
+
+the problem here is an abstract state change:
+the result of receiving a letter is fully generic, in that its effect
+is to provide the player information (this could even be info encoded
+in the state) but the problem is that this sort of state change
+could refer to many things.
+
+

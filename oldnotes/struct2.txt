@@ -1,0 +1,104 @@
+nimrod collapsing
+  allow multiple independent "flavor dicts",
+  specified at the start of a file
+    this allows covariance of values and avoids "frankenstein monsters"
+    allows multiple covariancies in one structure
+      e.g.
+      load{flavor-male, flavor-female}
+      load{flavor-spy, flavor-caveman}
+      this will create all 4 possible combinations
+
+location
+  -exits
+  -description
+
+state
+  state includes current plot direction / chapter
+
+event
+  knows how to implement various outcomes, given state
+
+outcomes
+  know how to change the state
+
+so the plot says: ok, we need the player to learn where professor
+is being held.
+player needs to gain information
+state: bathroom
+  possible events:
+    (start) overhear info
+    (end) ambushed
+    (look) find airduct
+    (look) find lost wallet
+    (look) find note
+    (action) drink water
+    (action) wash hands
+
+from all those possible events, which can support outcome:knowledge?
+  overhear info
+  ambushed
+  find lost wallet
+  find note
+
+overhear info:
+  "you overhear two men talking"
+  ambushed:
+    give knowledge note to one of the ambushing goons
+  find lost wallet:
+    it belongs to {goon} and contains a map to where professor is
+      being held
+  find note:
+    note is from {boss} saying where professor is being held
+    matchbook from place where professor is being held
+
+so now, in the bathroom, one of 5 events happens. then a popup:
+knowledge gained: location: {loc}
+
+and this is when location is collapsed.
+
+is there a way to subdivide find wallet -> knowledge?
+knowledge.location
+  "the wallet contains a map"
+knowledge.other
+  "the wallet contains a note"
+
+really, it works so much better if we include specific text in the
+popup for the note thing: switch to find a note?
+[you find a note on the ground]
+[the note reads ...]
+
+[there is a note in the wallet.]
+[the note reads ...]
+
+
+so, i think the way it works is:
+  collapse plot beat
+  plot generally indicates the next required outcome
+    -discover friend missing
+    -discover location of friend
+    -battle a squad
+    -rescue friend
+so as the player is walking around, looking for something,
+there's a good chance an event will happen in one way or the other
+that gives the required outcome
+
+
+
+design goals:
+
+1. should be as simple as possible
+  should go without saying, but this is a complex structure
+  and it needs to be held in mind.
+
+  aids in the satisfaction of corollary:
+  a. should be as simple to create / edit as possible
+    this avoids the problem of needing an editor or some complex
+    tooling, if at all possible
+
+2. should exploit some natural expression as a
+  (state machine?) (context free grammar?)
+
+  there's something powerfully exploitable as its structure,
+  and this requires more research to understand.
+
+3. easily extensible

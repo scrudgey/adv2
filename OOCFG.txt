@@ -1,0 +1,480 @@
+object-oriented context-free grammar
+
+i believe i've settled onto the correct structure for the top-down
+procedural generation.
+
+basic idea:
+  objects draw upon the nimrod dictionary in order to collapse to specifics.
+
+open questions:
+
+  1. lazy, required, and general keys
+
+  2. inheritance / nesting / DI
+
+    inheritance isn't quite the right word, but the idea is that
+    {location} -> Temple
+                    |
+                    | -> {weapon}: Axe, {trap_weapon}
+                    |
+                    | -> {macguffin}: {idol}, {gemstone}
+
+    when we resolve State.{location} -> State.Temple.{weapon} ->
+      State.Temple.Axe
+
+    the Axe needs a location. it gets it from Temple, either Temple
+    injects that, or Axe can draw upon the nimrod dictionary superset
+    to resolve a location for itself (unsure)
+
+    Now, {macguffin} should properly belong to State, so it can
+    be pre-collapsed
+
+
+
+---
+
+  remember the state of a variable can be collapsed.
+  then if we have a collapsed state.macguffin, we can take the inner product
+  with superposed objects to determine if we can collapse state.{location}
+  to Temple.
+
+  It seems then that Temple really wants to include
+  Temple.{state.macguffin} in its spec. Seems weird though, it should belong
+  to Temple.items
+              |
+              |-> {state.macguffin}: {idol}, {gemstone}
+              |
+
+  two things of note:
+    1. Temple is referencing state's variable, because the macguffin has
+      to be global
+    2. Temple places constraints on what it will accept as values of
+      state.macguffin;
+      really, these are not "acceptable values" so much as what the Temple
+      could set state.macguffin to
+
+
+
+  inheritance:
+  if we don't want to restrict, but instead accept all forms of macguffin, it
+  could be
+    Temple.items
+            |
+            |-> {state.macguffin}: {macguffin}
+            |
+
+  does this mean {macguffin} resolves strictly to *all of its children*?
+  that seems against the notion of nimrod.
+  because really we shouldn't be specifying the key "macguffin" but somehow
+  specifying <Macguffin>; turning a superclass into a key
+  now any instance of {macguffin} is compatible with <Macguffin>?
+  no...
+  not if {macguffin} resolves to some sort of compound object, modified,
+  decorated...?
+
+  is the idea:
+    every superclass is a nimrod key?
+    every superposed variable has a type
+    the variable can collapse to a subset of the type class, or it can just
+      specify the class itself for maximum compatibility
+
+  * how to scope on parent?
+    rather, when the state takes inner product with all values
+
+    State.{location} : <Location>
+
+    take inner product:
+    State . <Location>
+    becomes
+    State . Location.{properties} for each Location in <Location>
+
+    yields
+    State.{location} : {Location1}, {Location4}, {Location20}
+
+    then collapse proceeds as usual
+
+  * distinguish between instance requirements (a plot of a certain type,
+  a macguffin of a certain type) and properties (items present at location,
+  description, exits)
+  this raises the question: how do we scope
+
+the condition is that everything underneath a key is a subclass of that
+key type.
+therefore any element in the dictionary can be substituted while preserving
+all necessary relations and abilities.
+
+State . <Temple> :
+
+Temple is only compatible with states that have macguffin = golden idol
+
+State . <Temple> :
+
+State                 . Temple
+(macguffin = Idol())    ({macguffin} = {idol})
+
+could the idea be, that all keys are global with children?
+e.g. the nimrod dictionary, at first is
+
+State:
+(
+  {macguffin}: <Macguffin>
+  {location}: <Location>
+)
+this means: if anyone queries state for {macguffin}, we will collapse <Macguffin>
+  to be concrete.
+
+nimrod dictionary:
+  {macguffin}: <Macguffin>
+  {location}: <Location>
+
+collapse location first:
+
+State:
+(
+  {macguffin}: <Macguffin>
+  location: Temple:
+    (
+      {macguffin}: {idol}
+    )
+)
+
+location can collapse to Temple because {idol} ∈ <Macguffin>
+
+In this sense, it's a bunch of nested nimrod dictionaries that have to maintain
+nested-wise consistency
+
+Then if something queries State or Temple for {macguffin}, what happens?
+State.{macguffin} -> <Macguffin> ∩ {idol} -> {idol}
+  we take the intersection with every nested definition of {macguffin}
+
+the condition when collapsing any parameter
+S.{p} -> P,
+the condition is that P ∈ S
+  for every parameter (key) in common.
+
+global namespacing means things like object.{description}
+becomes tricky
+solution: distinguish between global & local.
+
+State:
+(
+  global
+  {macguffin}: <Macguffin>
+  local
+  {location}: <Location>
+)
+
+now we collapse {macguffin} first, possibly via a plot device
+
+State:
+(
+  global
+  macguffin: Idol (
+      local
+      {description}: {descriptions.macguffin.idol}
+    )
+  local
+  {location}: <Location>
+)
+
+now we collapse State.{location}
+
+the condition S.{p} -> s.P only if P ∈ S
+
+<Location> = {Location1}, {Location2} ... {LocationN}
+
+the condition is that location ∈ S
+
+Temple ∈ <Location>
+
+Temple: (
+  global
+  {macguffin}: {idol}
+  local
+  {description}: {descriptions.locations.temple}
+)
+
+Temple.{p} ∈ S.P ∀ global {p}
+because
+Temple.{macguffin} = {idol} ∈ State.{macguffin} = {idol}:
+
+    {idol} ∈ {idol}
+
+there are many locations in <Location> that do not obey this
+property. e.g.,
+Gallery: (
+  global
+  {macguffin}: {art}
+  local
+  {description}: {descriptions.locations.temple}
+)
+
+Gallery.{macguffin} = {art} ∉ State.{macguffin} = {idol}:
+{art} ∉ {idol}:
+
+The rule has to be a little more broad:
+there is at least one element S.{p} such that
+S.{p} ∈ s.P
+
+for cases where
+
+Treasury: Location (
+  global
+  {macguffin}: {idol}, {art}
+)
+
+so instead, the condition is
+
+collapsing the child property {c}, where S.{c}:
+the condition is that {c} -> C iff
+S.P ⊆ C.{p} for all {p} ?
+
+Treasury.{macguffin} = {idol}, {art}
+
+State.location = Treasury
+
+State.macguffin = Idol()
+
+State.macguffin ⊆ Treasury.{macguffin}
+?
+
+
+how to phrase this relation:
+({macguffin}: {idol}, {art}) ∈ {macguffin}: {idol}
+{macguffin}: {idol} ∈ {macguffin}: {idol} || {art}) ∈ {macguffin}: {idol}
+membership closed under addition
+membership distributes
+
+our set conditions need to obey parent-child relations and set addition.
+
+the condition is that the global properties of each tree structure
+agree: i.e., the global properties of the child must inherit all of the
+structure of the corresponding global specification
+
+a nimrod dictionary spans a set of all possibilities:
+for {key}: {val1}, {val2} ... {valn}
+Span({key}) =  Span({val1}) ∪ Span({val2}) ∪ ... Span({valn})
+Span(Val) = Val
+
+the condition of consistency is that
+for consistent objects o1, o2,
+sharing global property {p},
+Span(o1.{p}) ∩ Span(o2.{p}) ≠ Ø
+
+this is because if we are going to collapse {p},
+{p} -> {q}
+consistency must be maintained:
+{q} ∈ o1.{p} & {q} ∈ o2.{p}
+ensures that
+Span(o1.{p}) = {q} ∪ {val1} ∪ ... {valn}
+Span(o2.{p}) = {q} ∪ {val3} ∪ ... {valn}
+and therefore Span(o1.{p}) ∩ Span(o2.{p}) ⊆ {q} ≠ Ø
+
+instead of parents & children, it is as if we have a bunch of dictionaries
+all with competing, possibly contradictory, definitions of symbols.
+eventually, those keys will collapse into concrete values, and when they
+do, we must ensure that the object structures are compatible and consistent.
+this has something to do with object-oriented structure as well, since
+we're ensuring proper signature / inheritance relations
+
+suppose we have two objects in play, o1 and o2.
+o1.{p} -> {a}
+o2.{p} -> {b}
+
+can we collapse {p}?
+if there is {q} ∈ {a} and {q} ∈ {b}, then {p} -> {q}
+Span(o1.{p}) ∩ Span(o2.{p}) ⊆ {q}
+
+if there is no such {q}, then we cannot: consistency broken:
+Span(o1.{p}) ∩ Span(o2.{p}) = Ø
+
+
+there is a set of objects on which we require to have
+mutual consistency:
+o1, o2, ... on
+so that for all properties {p}, o1.{p}, o2.{p}, o3.{p},
+Span(o1.{p}) ∩ Span(o2.{p}) ∩ ... Span(on.{p}) ≠ Ø
+note: this is condition over all shared keys {p} and objects o, so
+it is a very restrictive condition.
+
+∈ can be defined recursively:
+Q: does {q} ∈ {a}, if
+{a}: {c}, {d}
+{c}: {f}, {g}
+{d}: {q} ?
+
+{q} ∈ {d} ∈ {a},
+{q} ∈ {a},
+then {a}->{d}->{q}:
+Span({a}) = Span({c}) ∩ Span({d})
+Span({a}) = Span({f}) ∩ Span({g}) ∩ Span({q}),
+Span({q}) ∈ Span({f}) ∩ Span({g}) ∩ Span({q}).
+consistency maintained.
+
+collapsing a property {p} -> Val is equivalent to
+adding Val to the consistency set.
+
+consistency objects are the concrete objects which are given.
+for all sets of n objects within the consistency set
+that share in common property {p}, we ensure that
+Span(o1.{p}) ∩ Span(o2.{p}) ∩ ... Span(on.{p}) ≠ Ø
+
+what this means is, that many objects can be made concrete while
+they all reference the same superposed object. it is possible to
+collapse the superposed object without breaking any of the existing
+concrete objects because there is at least one value they all share
+in common.
+is there a single global consistency set? or is it nested by
+parent-child relations?
+the set of subclasses of a class are not required to be consistent.
+object properties are required to be consistent.
+State: (
+  global
+  {macguffin}: <Macguffin>
+  local
+  {location}: <Location>
+)
+therefore
+Cons(State.{macguffin}, State.{location})
+
+<Location> = Temple, Gallery, ... {LocationN}
+<Macguffin> = Idol, Art, ... {LocationN}
+Temple: (
+  global
+  {macguffin}: Idol
+  local
+  {description}: {descriptions.locations.temple}
+)
+Gallery: (
+  global
+  {macguffin}: Art
+  local
+  {description}: {descriptions.locations.temple}
+)
+
+and the consistency here, specifically, is that if we collapse
+State.{location} -> Temple,
+then we must restrict
+State.{macguffin} -> Idol
+
+State.location -> Temple
+then
+Cons(State, State.location):
+State.{macguffin} ∩ State.location.{macguffin} = Idol ≠ Ø
+
+consistency is passed, now we restrict dictionaries:
+Restrict(State, State.location):
+State.{macguffin} = State.{macguffin} ∩ State.location.{macguffin}
+State.location.{macguffin} = State.{macguffin} ∩ State.location.{macguffin}
+
+note the nested behavior. At first only State is in the consistency set,
+then State.{location} -> Temple means we add Temple to the consistency set.
+A parent is consistent with its child properties (objects).
+
+is it possible to clash? does it become too restrictive too fast?
+
+
+
+
+State: (
+  {macguffin}: <Macguffin>
+  {location}: <Location>
+)
+<Location> = Temple, Gallery, ... {LocationN}
+<Macguffin> = Idol, Art, ... {LocationN}
+Temple: (
+  {macguffin}: Idol
+  {plot}: StealIdol
+)
+Gallery: (
+  {macguffin}: Art
+  {plot}: StealArt
+)
+Idol: {
+  {plot}: StealArt
+}
+Art: {
+  {plot}: StealIdol
+}
+
+this makes it impossible to fully concretize State.
+
+because in this case, before we even collapse anything,
+it is impossible to have a consistent Temple.
+Cons(Temple, Temple{macguffin}):
+Temple.{plot} : StealIdol
+Temple.{macguffin}.{plot} : StealArt
+Temple ∩ Temple{macguffin} = Ø
+
+the whole point is to define an internally-consistent set of
+objects which can be made concrete without breaking;
+also, there is type-checking which preserves object signature
+
+
+
+I was thinking of simultaneous constraints on multiple, independent properties;
+I think it’s more accurate to say: an object has properties, and we need to ensure that we can collapse a concrete instance of the object such that its properties agree with each other, where necessary.
+
+instead of
+Fruit (
+  {type}
+  {color}
+)
+
+really, there are many subclasses of fruit that define their own colors
+
+Apple: Fruit (
+  {color}: Red, Green
+)
+
+Pear: Fruit (
+  {color}: Green, Brown
+)
+
+---
+
+now, if we have a {fruit}: <Fruit>, we could try to first collapse its
+color:
+"you see something ___".format({fruit}.{color})
+
+what is {fruit}.{color}?
+if {fruit}: <Set>,
+<Set> . {color} = Red, 2 Green, Brown
+
+suppose we get {fruit}.color = Red
+now {fruit} can only collapse to Apple.
+but if we have {fruit}.color = Green
+{fruit} can collapse to either Apple or Pear.
+
+color.Red . <Fruit> = <Apple>
+color.Green . <Fruit> = <Apple, Pear>
+
+this is bottom-up collapsing. the key thing is, you can collapse
+a property without collapsing the parent object.
+however in collapsing the property, you now restrict the parent object
+to the set of objects consistent with the resulting property.
+
+{o}: <o>
+{o}.{p} -> P
+<o> -> <o|P>
+
+---
+
+second point: what if there is a property shared by some fruit, but
+not all?
+
+Apple: Fruit (
+  {color}: Red, Green
+)
+
+Peach: Fruit (
+  {color}: Red
+  {pit}: PeachPit
+)
+
+and we have an instance of {fruit}
+we should be able to query {fruit}.{pit}
+
+{fruit} : <Fruit>
+{fruit}.{pit} -> PeachPit
+

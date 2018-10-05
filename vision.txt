@@ -1,0 +1,31 @@
+gameplay example
+================
+
+player starts. they are detective sam slyde, and they are in
+their office.
+
+> leave to street
+
+they walk the street. they notice a newspaper stand.
+[get shot at from a car]
+(>inspect?)
+the newspaper headline says that the rootin tootin diamond
+has been stolen from the local museum
+[_x_ has been kidnapped]
+
+> go to museum
+
+you are at the museum.
+the curator tells you about the bad guys he saw.
+"they said, the Scorpion Gang are gonna be bigtime after this hit!"
+you learn about the scorpion gang
+
+> go to bar
+
+you are at the bar
+
+> interrogate underworld goon
+
+he says "the scorpion gang, yeah i know them! they hang out
+at the docks"
+
