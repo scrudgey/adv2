@@ -1,190 +1,72 @@
-data:
-text files, with sub-structures in folders
+--------------------
++   structure      +
+--------------------
 
-distinguish between instances and the nimrod specs.
+a path finding system: BFS through a graph.
+identify all services possible in current state
+make connections
+then traverse from state to future state
 
-we can move $object from room to room without knowing what it
-looks like.
-it won't look like anything until something / anything queries
-its "description" field
+all services, regardless of their input.
 
+how are services specified?
+they have a function enabled(state)
 
-nested properties, so that the higher collapses the lower.
-collapsing villain collapses appearance and sex,
-but collapsing villain appearance or sex does not collapse villain.
-does this have to be true?
+then to determine if service2 is enabled through the action of service1
+take service2.enabled(service1.process(state))
+now enabled, and process can be as detailed and general as required.
 
-rule of thumb: don't collapse any property or instance until
-we absolutely have to, in order to know what happens.
+now, locations and items have attached services.
 
-----
+location: study has service: kill bad guy
+  takes state -> returns state but bad guy is dead
 
-nimrod structure:
+goal (endpoint?) end conflict enabled function:
+  requires all bad guys to be dead (or others)
 
-is sex below name, or is name below sex?
-  things should be structured according to specificity
-  but then, some things are linked
+then player can choose from possible services that can be
+enacted by player, in a unified system.
 
-relationships:
-  name collapses sex
-  sex does not collapse name
-  sex collapses grammar structures
-  grammar structures collapse sex
-  appearance collapses sex? probably, or nothing
-  sex does not collapse appearance
-  name does not collapse appearance
-  appearance does not collapse name
-think of "collapse relationships" like a "requirements network"
-they not only collapse their requirements, but they depend on
-the requirements in such a way that sex determines possessive
-and possessive determines sex
-so really it's a cluster of things that collapse simultaneously.
-  $sex
-  $sex.grammar
-so the basic framework of a property that collapses should allow
-for multiple simultaneous properties
-or more general? there's a way for eigenvalues to affect
-  other eigenvalues when set (tab-indent and address)
-but it's annoying to think about the situation with sex vs.
-grammar, having to double up all the specific code
-  and to have "possessive" collapse to his / her and from there
-  set sex, it just feels incorrect. sex determines possessive,
-  not the other way around
-
-"the villain stubs {$villain.possessive} toe"
-$villain.possessive.get
-  query requirements:
-$villain.possessive -> $villain.sex
-$villain.sex can be either a superposition or an eigenvalue.
-as part of querying it, it will collapse.
-
---------
-
-$villain properties:
-
--name
-  -firstName
-  -lastName
-  -nickName
-  -appearance
-  -sex
-    -first_person_singular  *note: me / my
-    -third_person_singular  *note: he / she
-    -possessive             *note: his / her
-
-collapsing name collapses sex and pronouns
-collapsing appearance collapses name
-
-{villain} example:
-
--name
-  Carmen Sandiego
-    -firstName
-      Carmen
-    -lastName
-      Sandiego
-    -nickName
-      {villain.nickName}
-    -appearance
-      {appearance.rich}
-      {appearance.spy}
-    -sex
-      female
-    -first_person_singular
-      I / me
-    -third_person_singular
-      she
-    -possessive
-      her
-
------
-
-$room:
-
--name
-  -appearance
-  -exits
+(we can specify time intervals in state traversal, this allows
+us to identify a possible path for 2 to 3 steps from now. confirm
+path, then stop at first time step.)
 
 
-collapsing name collapses exit types (stair, door, window)
-really, collapsing room should collapse its type (room, hall,
-  road, forest) and that collapses its name, appearance, and
-  exits (number and type of exit)
 
-room.type.name
-room.type.description ?
+i think this will work, and services are relatively easily
+specified.
+questions/issues:
 
+1: difficult codifying all desired events in this way?
+  don't worry about implementation just yet.
 
-it's possible that collapsing one value changes the state of
-other values. either to eigenvalues or superpositions
-  but you shouldn't be able to change an eigenvalue to a
-  superposition.
-this feels like it's abstracting too much from
+2: serializing this in a readable format
 
-eigenValue1: female / she / her
-eigenValue2: male / him / his
+3: tools for quickly finding information about state
+  (like unity getcomponent etc)
 
-possibility: knowing that the villain is female determines
-what possessives to use, and this means we don't need to store
-values in the person structure
+4: some events don't change state: finding a letter, e.g.,
+  doesn't change state; it just presents a dialogue box
+  (maybe?)
+  it could just give the player an item, but i don't like that.
 
-$villain.name -> carmen sandiego -> (female / she / her)
-
-$location -> $room
-  causes $exits -> {door} {door} {0.5|window}
-in this case, collapsing specifically to "room" changes the
-exits to a series of possibilities
-
-is there any reason not to just collapse all of the properties
-as soon as any specific is requested?
-in other words, what is gained by leaving the rest in
-superposition?
-in QM, superposition states can still influence each other before
-collapse.
-it's a neat possibility and it feels like i should keep unqueried
-things in superposition! partly because it feels like its more
-elegant if every property and every item is at root the same
-kind of object in superposition.
-
-this would be handled like:
-$villain ->
-name: carmen
-sex: F
-appearance: {appearance.rich.female} {appearance.spy.female}
-org: -etc-
-
-the data files specify some eigenstates, and
-
-"any organization at all:"
-{organization}
-
-"any terrorist organization:"
-{organization.terrorist}
+5: integration with nimrod / state collapse
 
 
-i feel like we have the basic picture in place, the only problem
-is how do we specify relations of precedence
+how to address 4:
+  what is the goal of presenting information? it must
+  address a particular point, and identify e.g. a location or
+  person to find. this changes state in that sense
+we could include player's information (known locations, persons) in
+the state.
 
-{villain} -> $villain -> carmen sandiego?
+but: a general method to provide information: how does this work
+with BFS?
 
-$villain.sex.name
-$villain.sex.grammar
-$villain.organization
+the problem here is an abstract state change:
+the result of receiving a letter is fully generic, in that its effect
+is to provide the player information (this could even be info encoded
+in the state) but the problem is that this sort of state change
+could refer to many things.
 
-relationships:
-  name collapses sex
-  sex does not collapse name
-
-  sex collapses grammar structures
-  grammar structures collapses sex
-
-
-how to specify?
-villain
------
--sex: grammar
-  {male | female}
--grammar: sex
-  he / him / his : male ?
-  she / her / hers : female ?
 
