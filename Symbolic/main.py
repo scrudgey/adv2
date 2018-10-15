@@ -15,7 +15,10 @@ class Symbol(object):
             for subclass in values.__subclasses__():
                 self.values.append(subclass())
         else:
-            self.values = values
+            if type(values) is list:
+                self.values = values
+            else:
+                self.values = [values]
         self._value = None
         self.CalcAttributes()
         
@@ -39,14 +42,7 @@ class Symbol(object):
         for value in self.values:
             if type(value) in PRIMITIVE_TYPES:
                 continue
-            filters = [
-                lambda key, value: key[0] != '_',
-                lambda key, value: not callable(value),
-                lambda key, value: key != 'parent' and key != 'values'
-            ]
-            attributes = {i: value.__getattribute__(i) for i in dir(value)}
-            for fn in filters:
-                attributes = {k: v for k, v in attributes.items() if fn(k, v)}
+            attributes = AttributesDict(value)
             for key, val in attributes.items():
                 if key not in attribute_values:
                     attribute_values[key] = []
@@ -88,21 +84,10 @@ class Symbol(object):
         
         # recursively apply to all shared symbolic attributes
         new_values = []
-        filters = [
-            lambda key, value: key[0] != '_',
-            lambda key, value: not callable(value),
-            lambda key, value: key != 'parent' and key != 'values'
-        ]
-        symbol_attributes = {i: symbol.__getattribute__(i) for i in dir(symbol)}
-        for fn in filters:
-            symbol_attributes = {k: v for k, v in symbol_attributes.items() if fn(k, v)}
+        symbol_attributes = AttributesDict(symbol)
         for value in self.values:
             attribues_match = True
-            
-            value_attributes = {i: value.__getattribute__(i) for i in dir(value)}
-            for fn in filters:
-                value_attributes = {k: v for k, v in value_attributes.items() if fn(k, v)}
-                
+            value_attributes = AttributesDict(value)
             for attribute in value_attributes.keys():
                 if not attribues_match:
                     continue
@@ -127,7 +112,18 @@ class Symbol(object):
             if self.parent is not None:
                 self.parent.Collapse(self.parent, upwards=True)
         return self
-                 
+
+def AttributesDict(obj):
+    filters = [
+        lambda key, value: key[0] != '_',
+        lambda key, value: not callable(value),
+        lambda key, value: key != 'parent' and key != 'values'
+    ]
+    attributes = {}
+    attributes = {i: obj.__getattribute__(i) for i in dir(obj)}
+    for fn in filters:
+        attributes = {k: v for k, v in attributes.items() if fn(k, v)}
+    return attributes
 
 def subset(value, target, depth=0):
     '''Return the subset of value that spans target. If no
