@@ -62,43 +62,45 @@ class Symbol(object):
         else:
             return self.Collapse(None)
     
-    def Collapse(self, symbol, upwards=True):
+    def Collapse(self, symbol):
         if symbol is None:
             return self.Collapse(Symbol([random.choice(self.values)]))
-
+            
+        # adopt new values
         self.InitVals(Subset(self, symbol))
 
+        # restrict my values to only those whose attributes are also consistent with symbol
         self.Restrict(symbol)
 
+        # recalculate my attributes
         self.CalcAttributes()
 
-        if upwards:
-            # TODO: don't propagate upwards if our values haven't changed
-            if self.parent is not None:
-                self.parent.Collapse(self.parent, upwards=True)
+        # TODO: don't propagate upwards if our values haven't changed
+        if self.parent is not None:
+            self.parent.Collapse(self.parent)
         return self
 
     def Restrict(self, symbol):
-        # ensure that I have all the attributes of symbol
-        new_values = []
-        symbol_attributes = AttributesDict(symbol)
-        for value in self.values:
-            attribues_match = True
+        def _attributes_match(value, symbol_attributes):
             value_attributes = AttributesDict(value)
             for attribute in value_attributes.keys():
-                if not attribues_match:
-                    continue
                 if attribute in symbol_attributes:
                     value_attribute = Subset(value_attributes[attribute], symbol_attributes[attribute])
                     if value_attribute is None:
-                        attribues_match = False
+                        return False
                     else:
                         # TODO: is this destructive?
                         setattr(value, attribute, value_attribute)
-                else:
-                    # adopt missing target values to ensure consistency?
+            for attribute in symbol_attributes.keys():
+                if attribute not in value_attributes:
+                    # adopt missing values?
                     pass
-            if attribues_match:
+            return True
+
+        new_values = []
+        symbol_attributes = AttributesDict(symbol)
+        for value in self.values:
+            if _attributes_match(value, symbol_attributes):
                 new_values.append(value)
         # self.values = new_values
         self.InitVals(new_values)
@@ -128,6 +130,8 @@ def Subset(value, target, depth=0):
 
     if type(value) is Symbol:
         return Subset(value.values, target, depth=depth+1)
+
+    # TODO: explain why this works
     if type(value) is list:
         results = [Subset(element, target, depth=depth+1) for element in value]
         results = [result for result in results if result is not None]
@@ -143,6 +147,8 @@ def Subset(value, target, depth=0):
 
     if type(target) is Symbol:
         return Subset(value, target.values, depth=depth+1)
+
+    # TODO: explain why this works
     if type(target) is list:
         for element in target:
             result = Subset(value, element, depth=depth+1)
