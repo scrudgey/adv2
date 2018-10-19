@@ -8,6 +8,7 @@ class Symbol(object):
     def __init__(self, values):
         self.parent = None
         self.InitVals(values)
+        self.CalcAttributes()
         
     def InitVals(self, values):
         if inspect.isclass(values):
@@ -19,8 +20,11 @@ class Symbol(object):
                 self.values = values
             else:
                 self.values = [values]
-        self._value = None
-        self.CalcAttributes() 
+        # self._value = None
+        if len(self.values) == 1:
+            self._value = self.values[0]
+        else:
+            self._value = None
         
     def __repr__(self):
         return str(self.val)
@@ -66,27 +70,20 @@ class Symbol(object):
     
     def Collapse(self, symbol, upwards=True):
         if symbol is None:
+            return self.Collapse(Symbol([random.choice(self.values)]))
 
-            # TODO: calculate a new symbol for this value
-            # and collapse to it, to ensure downwards (attribute)
-            # consistency.
-            self._value = random.choice(self.values)
-            self.values = [self._value]
-            if upwards:
-                if self.parent is not None:
-                    self.parent.Collapse(self.parent, upwards=True)
-            return self._value
-        
-        new_values = subset(self, symbol)
-        
+
+        self.InitVals(subset(self, symbol))
+
         # TODO: why is this necessary? subset should not be returning
-        # multiple types
-        if type(new_values) is list: 
-            if len(new_values) == 0:
-                raise Exception('empty symbol')
-            self.values = new_values
-        else:
-            self.values = [new_values]
+        # multiple types?
+        # new_values = subset(self, symbol)
+        # if type(new_values) is list: 
+        #     if len(new_values) == 0:
+        #         raise Exception('empty symbol')
+        #     self.values = new_values
+        # else:
+        #     self.values = [new_values]
         
         # recursively apply to all shared symbolic attributes
         self.Restrict(symbol)
@@ -116,8 +113,8 @@ class Symbol(object):
                     else:
                         setattr(value, attribute, value_attribute)
                 else:
-                    pass
                     # adopt missing target values to ensure consistency?
+                    pass
             if attribues_match:
                 new_values.append(value)
         self.values = new_values
@@ -140,7 +137,12 @@ def subset(value, target, depth=0):
     such subset exists, return None
     '''
 #     print('\t'*depth, 'subset: {}, {}'.format(value, target))
-    is_subset = False
+
+
+    #######################
+    ## VALUE IS ITERABLE ##
+    #######################
+
     if type(value) is Symbol:
         return subset(value.values, target, depth=depth+1)
     if type(value) is list:
@@ -153,7 +155,11 @@ def subset(value, target, depth=0):
         if len(results) == 1:
             return results[0]
         return results
-        
+    
+    ########################
+    ## TARGET IS ITERABLE ##
+    ########################
+
     if type(target) is Symbol:
         return subset(value, target.values, depth=depth+1)
     if type(target) is list:
@@ -162,7 +168,12 @@ def subset(value, target, depth=0):
             if result is not None:
                 return result
         return None
-        
+    
+    ###################
+    # CONCRETE VALUES #
+    ###################
+
+    is_subset = False
     if value == target:
         is_subset = True
     if type(value) not in PRIMITIVE_TYPES:
