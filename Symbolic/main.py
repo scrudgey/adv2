@@ -20,7 +20,7 @@ class Symbol(object):
             else:
                 self.values = [values]
         self._value = None
-        self.CalcAttributes()
+        self.CalcAttributes() 
         
     def __repr__(self):
         return str(self.val)
@@ -66,6 +66,10 @@ class Symbol(object):
     
     def Collapse(self, symbol, upwards=True):
         if symbol is None:
+
+            # TODO: calculate a new symbol for this value
+            # and collapse to it, to ensure downwards (attribute)
+            # consistency.
             self._value = random.choice(self.values)
             self.values = [self._value]
             if upwards:
@@ -75,6 +79,8 @@ class Symbol(object):
         
         new_values = subset(self, symbol)
         
+        # TODO: why is this necessary? subset should not be returning
+        # multiple types
         if type(new_values) is list: 
             if len(new_values) == 0:
                 raise Exception('empty symbol')
@@ -83,6 +89,16 @@ class Symbol(object):
             self.values = [new_values]
         
         # recursively apply to all shared symbolic attributes
+        self.Restrict(symbol)
+
+        self.CalcAttributes()
+        if upwards:
+            # TODO: don't propagate upwards if our values haven't changed
+            if self.parent is not None:
+                self.parent.Collapse(self.parent, upwards=True)
+        return self
+
+    def Restrict(self, symbol):
         new_values = []
         symbol_attributes = AttributesDict(symbol)
         for value in self.values:
@@ -105,13 +121,7 @@ class Symbol(object):
             if attribues_match:
                 new_values.append(value)
         self.values = new_values
-
-        self.CalcAttributes()
-        if upwards:
-            # TODO: don't propagate upwards if our values haven't changed
-            if self.parent is not None:
-                self.parent.Collapse(self.parent, upwards=True)
-        return self
+        
 
 def AttributesDict(obj):
     filters = [
