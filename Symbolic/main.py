@@ -1,8 +1,9 @@
 import inspect
 import random
 from weakref import WeakKeyDictionary
+from collections import defaultdict
 
-PRIMITIVE_TYPES = [str, int]
+PRIMITIVE_TYPES = [str, int, float]
 
 class Symbol(object):
     def __init__(self, values):
@@ -20,7 +21,6 @@ class Symbol(object):
                 self.values = values
             else:
                 self.values = [values]
-        # self._value = None
         if len(self.values) == 1:
             self._value = self.values[0]
         else:
@@ -42,19 +42,13 @@ class Symbol(object):
         raise AttributeError("{} object has no attribute {}".format(self.__class__, attr))
     
     def CalcAttributes(self):
-        attribute_values = {}
+        attribute_values = defaultdict(list)
         for value in self.values:
             if type(value) in PRIMITIVE_TYPES:
                 continue
-            attributes = AttributesDict(value)
-            for key, val in attributes.items():
-                if key not in attribute_values:
-                    attribute_values[key] = []
+            for key, val in AttributesDict(value).items():
                 if isinstance(val, Symbol):
-                    if type(val.values) is list:
-                        attribute_values[key].extend(val.values)
-                    else:
-                        attribute_values[key].append(val.values)
+                    attribute_values[key].extend(val.values)
                 else:
                     attribute_values[key].append(val)
         for key, vals in attribute_values.items():
@@ -72,23 +66,12 @@ class Symbol(object):
         if symbol is None:
             return self.Collapse(Symbol([random.choice(self.values)]))
 
+        self.InitVals(Subset(self, symbol))
 
-        self.InitVals(subset(self, symbol))
-
-        # TODO: why is this necessary? subset should not be returning
-        # multiple types?
-        # new_values = subset(self, symbol)
-        # if type(new_values) is list: 
-        #     if len(new_values) == 0:
-        #         raise Exception('empty symbol')
-        #     self.values = new_values
-        # else:
-        #     self.values = [new_values]
-        
-        # recursively apply to all shared symbolic attributes
         self.Restrict(symbol)
 
         self.CalcAttributes()
+
         if upwards:
             # TODO: don't propagate upwards if our values haven't changed
             if self.parent is not None:
@@ -96,6 +79,7 @@ class Symbol(object):
         return self
 
     def Restrict(self, symbol):
+        # ensure that I have all the attributes of symbol
         new_values = []
         symbol_attributes = AttributesDict(symbol)
         for value in self.values:
@@ -105,19 +89,19 @@ class Symbol(object):
                 if not attribues_match:
                     continue
                 if attribute in symbol_attributes:
-                    symbol_attribute = symbol_attributes[attribute]
-                    value_attribute = value_attributes[attribute]
-                    value_attribute = subset(value_attribute, symbol_attribute)
+                    value_attribute = Subset(value_attributes[attribute], symbol_attributes[attribute])
                     if value_attribute is None:
                         attribues_match = False
                     else:
+                        # TODO: is this destructive?
                         setattr(value, attribute, value_attribute)
                 else:
                     # adopt missing target values to ensure consistency?
                     pass
             if attribues_match:
                 new_values.append(value)
-        self.values = new_values
+        # self.values = new_values
+        self.InitVals(new_values)
         
 
 def AttributesDict(obj):
@@ -132,23 +116,20 @@ def AttributesDict(obj):
         attributes = {k: v for k, v in attributes.items() if fn(k, v)}
     return attributes
 
-def subset(value, target, depth=0):
+def Subset(value, target, depth=0):
     '''Return the subset of value that spans target. If no
     such subset exists, return None
     '''
 #     print('\t'*depth, 'subset: {}, {}'.format(value, target))
-
 
     #######################
     ## VALUE IS ITERABLE ##
     #######################
 
     if type(value) is Symbol:
-        return subset(value.values, target, depth=depth+1)
+        return Subset(value.values, target, depth=depth+1)
     if type(value) is list:
-        results = []
-        for element in value:
-            results.append(subset(element, target, depth=depth+1))
+        results = [Subset(element, target, depth=depth+1) for element in value]
         results = [result for result in results if result is not None]
         if len(results) == 0:
             return None
@@ -161,10 +142,10 @@ def subset(value, target, depth=0):
     ########################
 
     if type(target) is Symbol:
-        return subset(value, target.values, depth=depth+1)
+        return Subset(value, target.values, depth=depth+1)
     if type(target) is list:
         for element in target:
-            result = subset(value, element, depth=depth+1)
+            result = Subset(value, element, depth=depth+1)
             if result is not None:
                 return result
         return None
@@ -183,6 +164,7 @@ def subset(value, target, depth=0):
             # TODO: (subclass)Value promotion
             # just take all attributes and methods
             is_subset = True
+
 #     print('\t'*depth, is_subset)
     if not is_subset:
         return None
