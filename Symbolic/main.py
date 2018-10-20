@@ -16,6 +16,8 @@ class Symbol(object):
             self.values = []
             for subclass in values.__subclasses__():
                 self.values.append(subclass())
+                # sym = Symbol(subclass)
+                # self.values.append(Symbol(subclass()))
         else:
             if type(values) is list:
                 self.values = values
@@ -48,6 +50,8 @@ class Symbol(object):
                 continue
             for key, val in AttributesDict(value).items():
                 if isinstance(val, Symbol):
+                    # TODO: recursion
+                    # val.CalcAttributes()
                     attribute_values[key].extend(val.values)
                 else:
                     attribute_values[key].append(val)
@@ -65,7 +69,7 @@ class Symbol(object):
     def Collapse(self, symbol):
         if symbol is None:
             return self.Collapse(Symbol([random.choice(self.values)]))
-            
+
         # adopt new values
         self.InitVals(Subset(self, symbol))
 
@@ -81,28 +85,35 @@ class Symbol(object):
         return self
 
     def Restrict(self, symbol):
+        print(self,'restricting',self.values,'to',symbol.values)
         def _attributes_match(value, symbol_attributes):
             value_attributes = AttributesDict(value)
-            for attribute in value_attributes.keys():
-                if attribute in symbol_attributes:
-                    value_attribute = Subset(value_attributes[attribute], symbol_attributes[attribute])
-                    if value_attribute is None:
-                        return False
-                    else:
-                        # TODO: is this destructive?
-                        setattr(value, attribute, value_attribute)
-            for attribute in symbol_attributes.keys():
-                if attribute not in value_attributes:
-                    # adopt missing values?
-                    pass
+            for attribute in value_attributes.keys() & symbol_attributes.keys():
+                # TODO: collapse here? recursion
+                print(self,'checking attribute', attribute)
+                print('\t',value_attributes[attribute])
+                print('\t',symbol_attributes[attribute])
+                value_attribute = Subset(value_attributes[attribute], symbol_attributes[attribute])
+                if value_attribute is None:
+                    # print(self, 'value', value, ' is dropped after restriction on ', attribute)
+                    return False
+                else:
+                    print('\tsubset is',value_attribute)
+                    # TODO: is this destructive?
+                    setattr(value, attribute, value_attribute)
+            for attribute in symbol_attributes.keys() - (value_attributes.keys() & symbol_attributes.keys()):
+                # adopt missing values?
+                pass
             return True
 
         new_values = []
         symbol_attributes = AttributesDict(symbol)
         for value in self.values:
+            print('checking value ', value, 'of type', type(value))
             if _attributes_match(value, symbol_attributes):
+                print('checks out')
                 new_values.append(value)
-        # self.values = new_values
+        print(self, 'restricted to', new_values)
         self.InitVals(new_values)
         
 
@@ -110,10 +121,9 @@ def AttributesDict(obj):
     filters = [
         lambda key, value: key[0] != '_',
         lambda key, value: not callable(value),
-        lambda key, value: key != 'parent' and key != 'values'
+        lambda key, value: key != 'parent' and key != 'values' and key != 'val'
     ]
-    attributes = {}
-    attributes = {i: obj.__getattribute__(i) for i in dir(obj)}
+    attributes = {i: obj.__getattribute__(i) for i in dir(obj) if i[0] != '_'}
     for fn in filters:
         attributes = {k: v for k, v in attributes.items() if fn(k, v)}
     return attributes
@@ -182,7 +192,11 @@ class Symbolic(object):
         self.symbols = WeakKeyDictionary()
  
     def __get__(self, instance_obj, objtype):
-        return self.symbols[instance_obj]
+        if instance_obj in self.symbols:
+            return self.symbols[instance_obj]
+        else:
+            # import ipdb; ipdb.set_trace()
+            return None
  
     def __set__(self, instance, values):
         self.symbols[instance] = Symbol(values)

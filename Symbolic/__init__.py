@@ -1,1 +1,1 @@
-from Symbolic.main import Symbolic
+from Symbolic.main import Symbolic, Symbol
