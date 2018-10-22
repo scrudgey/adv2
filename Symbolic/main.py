@@ -1,6 +1,5 @@
 import inspect
 import random
-from weakref import WeakKeyDictionary
 from collections import defaultdict
 
 PRIMITIVE_TYPES = [str, int, float]
@@ -59,6 +58,7 @@ class Symbol(object):
                 # implies recursion!
                 symbol = Symbol(vals)
                 symbol.parent = self
+                symbol.attribute_name = key
                 setattr(self, key, symbol)
     
     def Observe(self):
@@ -77,40 +77,44 @@ class Symbol(object):
         # adopt new values
         self.InitVals(Subset(self, symbol))
 
-        # restrict my values to only those whose attributes are also consistent with symbol
-        self.Restrict(symbol)
-
         # recalculate my attributes
         self.CalcAttributes()
 
-        # TODO: don't propagate upwards if our values haven't changed
-        # TODO: change this to just recursive restriction
+        # restrict my values to only those whose attributes are also consistent with symbol
         if self.parent is not None:
-            self.parent.Collapse(self.parent)
-        return self
+            # self.parent.Collapse(self.parent)
+            self.parent.Restrict(self, self.attribute_name)
 
-    def Restrict(self, symbol):
-        def _attributes_match(value, symbol_attributes):
+        return self
+    
+    def Restrict(self, child, attribute_name):
+        print(self,'restricting',attribute_name,':',child)
+        def _attributes_match(value):
             value_attributes = AttributesDict(value)
-            for attribute in value_attributes.keys() & symbol_attributes.keys():
-                # TODO: collapse here? recursion
-                value_attribute = Subset(value_attributes[attribute], symbol_attributes[attribute])
-                if value_attribute is None:
+            if attribute_name in value_attributes:
+                # v.p -> v.p ∩ child
+                value_attribute = value_attributes[attribute_name]
+                intersection = Subset(value_attribute, child)
+                if intersection is None:
                     return False
                 else:
-                    setattr(value, attribute, value_attribute)
-            for attribute in symbol_attributes.keys() - (value_attributes.keys() & symbol_attributes.keys()):
-                # adopt missing values?
-                pass
-            return True
+                    # should this be a symbol?
+                    setattr(value, attribute_name, intersection)
+                    return True
+            else:
+                # child has not p
+                return False
 
-        new_values = []
-        symbol_attributes = AttributesDict(symbol)
+        new_vals = []
         for value in self.values:
-            if _attributes_match(value, symbol_attributes):
-                new_values.append(value)
-        self.InitVals(new_values)
-        # TODO: restrict upwards?        
+            if _attributes_match(value):
+                new_vals.append(value)
+        if len(new_vals) == 0:
+            raise Exception('empty restriction!')
+        self.InitVals(new_vals)
+
+        if self.parent is not None:
+            self.parent.Restrict(self, self.attribute_name)
 
 def AttributesDict(obj):
     filters = [
@@ -133,7 +137,7 @@ def Subset(value, target, depth=0):
     #######################
 
     if type(value) is Symbol:
-        return Subset(value.values, target, depth=depth+1)
+        return Symbol(Subset(value.values, target, depth=depth+1))
 
     # TODO: explain why this works
     if type(value) is list:
@@ -180,22 +184,21 @@ def Subset(value, target, depth=0):
         return None
     
     return value
-
-class Symbolic(object):
-    def __init__(self):
-        self.symbols = WeakKeyDictionary()
+# class Symbolic(object):
+#     def __init__(self):
+#         self.symbols = WeakKeyDictionary()
  
-    def __get__(self, instance_obj, objtype):
-        if instance_obj is None:
-            return self
-        # if instance_obj in self.symbols:
-        return self.symbols[instance_obj]
-        # else:
-        #     # import ipdb; ipdb.set_trace()
-        #     return None
+#     def __get__(self, instance_obj, objtype):
+#         if instance_obj is None:
+#             return self
+#         # if instance_obj in self.symbols:
+#         return self.symbols[instance_obj]
+#         # else:
+#         #     # import ipdb; ipdb.set_trace()
+#         #     return None
  
-    def __set__(self, instance, values):
-        self.symbols[instance] = Symbol(values)
+#     def __set__(self, instance, values):
+#         self.symbols[instance] = Symbol(values)
  
-    def __delete__(self, instance):
-        del self.symbols[instance]
+#     def __delete__(self, instance):
+#         del self.symbols[instance]
