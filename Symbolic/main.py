@@ -43,6 +43,7 @@ class Symbol(object):
         raise AttributeError("{} object has no attribute {}".format(self.__class__, attr))
     
     def CalcAttributes(self):
+        # TODO: drop deprecated attributes
         attribute_values = defaultdict(list)
         for value in self.values:
             if type(value) in PRIMITIVE_TYPES:
@@ -55,7 +56,7 @@ class Symbol(object):
                 else:
                     attribute_values[key].append(val)
         for key, vals in attribute_values.items():
-                # implies recursion here
+                # implies recursion!
                 symbol = Symbol(vals)
                 symbol.parent = self
                 setattr(self, key, symbol)
@@ -67,6 +68,7 @@ class Symbol(object):
             return self.Collapse(None)
     
     def Collapse(self, symbol):
+        # TODO: reject if intersection is 0? some basic rejection 
         if symbol is None:
             return self.Collapse(Symbol([random.choice(self.values)]))
         if type(symbol) is not Symbol:
@@ -96,7 +98,6 @@ class Symbol(object):
                 if value_attribute is None:
                     return False
                 else:
-                    # TODO: is this destructive?
                     setattr(value, attribute, value_attribute)
             for attribute in symbol_attributes.keys() - (value_attributes.keys() & symbol_attributes.keys()):
                 # adopt missing values?
