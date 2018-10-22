@@ -16,10 +16,10 @@ class Symbol(object):
             self.values = []
             for subclass in values.__subclasses__():
                 self.values.append(subclass())
-                # sym = Symbol(subclass)
-                # self.values.append(Symbol(subclass()))
         else:
-            if type(values) is list:
+            if type(values) is Symbol:
+                self.values = values.values
+            elif type(values) is list:
                 self.values = values
             else:
                 self.values = [values]
@@ -28,11 +28,10 @@ class Symbol(object):
         else:
             self._value = None
         
-    # def __repr__(self):
-    #     return str(self.val)
+    def __repr__(self):
+        return str(self.val)
     
     def __getattr__(self, attr):
-        # allow self.val to inspect without collapsing my value
         if attr == 'val':
             if self._value:
                 return self._value
@@ -50,12 +49,13 @@ class Symbol(object):
                 continue
             for key, val in AttributesDict(value).items():
                 if isinstance(val, Symbol):
-                    # TODO: recursion
-                    # val.CalcAttributes()
                     attribute_values[key].extend(val.values)
+                elif type(val) is list:
+                    attribute_values[key].extend(val)
                 else:
                     attribute_values[key].append(val)
         for key, vals in attribute_values.items():
+                # implies recursion here
                 symbol = Symbol(vals)
                 symbol.parent = self
                 setattr(self, key, symbol)
@@ -82,6 +82,7 @@ class Symbol(object):
         self.CalcAttributes()
 
         # TODO: don't propagate upwards if our values haven't changed
+        # TODO: change this to just recursive restriction
         if self.parent is not None:
             self.parent.Collapse(self.parent)
         return self
@@ -105,12 +106,10 @@ class Symbol(object):
         new_values = []
         symbol_attributes = AttributesDict(symbol)
         for value in self.values:
-            print(self, 'checking attributes on',value)
             if _attributes_match(value, symbol_attributes):
                 new_values.append(value)
-                print(value,'passes')
         self.InitVals(new_values)
-        
+        # TODO: restrict upwards?        
 
 def AttributesDict(obj):
     filters = [
@@ -127,7 +126,6 @@ def Subset(value, target, depth=0):
     '''Return the subset of value that spans target. If no
     such subset exists, return None
     '''
-#     print('\t'*depth, 'subset: {}, {}'.format(value, target))
 
     #######################
     ## VALUE IS ITERABLE ##
@@ -176,7 +174,7 @@ def Subset(value, target, depth=0):
             # just take all attributes and methods
             is_subset = True
 
-#     print('\t'*depth, is_subset)
+    # print('\t'*depth, is_subset)
     if not is_subset:
         return None
     
@@ -187,6 +185,8 @@ class Symbolic(object):
         self.symbols = WeakKeyDictionary()
  
     def __get__(self, instance_obj, objtype):
+        if instance_obj is None:
+            return self
         # if instance_obj in self.symbols:
         return self.symbols[instance_obj]
         # else:
