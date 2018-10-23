@@ -88,7 +88,6 @@ class Symbol(object):
         return self
     
     def Restrict(self, child, attribute_name):
-        print(self,'restricting',attribute_name,':',child)
         def _attributes_match(value):
             value_attributes = AttributesDict(value)
             if attribute_name in value_attributes:
@@ -137,7 +136,11 @@ def Subset(value, target, depth=0):
     #######################
 
     if type(value) is Symbol:
-        return Symbol(Subset(value.values, target, depth=depth+1))
+        subset = Subset(value.values, target, depth=depth+1)
+        if subset is not None:
+            return Symbol(subset)
+        else:
+            return None
 
     # TODO: explain why this works
     if type(value) is list:
@@ -184,6 +187,8 @@ def Subset(value, target, depth=0):
         return None
     
     return value
+
+
 # class Symbolic(object):
 #     def __init__(self):
 #         self.symbols = WeakKeyDictionary()
