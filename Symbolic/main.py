@@ -68,9 +68,11 @@ class Symbol(object):
             return self.Collapse(None)
     
     def Collapse(self, symbol):
-        # TODO: reject if intersection is 0? some basic rejection 
         if symbol is None:
             return self.Collapse(Symbol([random.choice(self.values)]))
+        # TODO: reject if intersection is 0? some basic rejection 
+        # TODO: symbol is type
+        
         if type(symbol) is not Symbol:
             symbol = Symbol(symbol)
 
@@ -171,22 +173,25 @@ def Subset(value, target, depth=0):
     # CONCRETE VALUES #
     ###################
 
-    is_subset = False
+    # is_subset = False
     if value == target:
-        is_subset = True
+        return value
+    if type(target) is type:
+        if type(value) == target:
+            return value
+        if type(value) in target.__subclasses__():
+            return value
+
     if type(value) not in PRIMITIVE_TYPES:
         if type(value) == type(target):
-            is_subset = True
+            return value
         if type(target) in type(value).__subclasses__():
             # TODO: (subclass)Value promotion
             # just take all attributes and methods
-            is_subset = True
+            return value
 
     # print('\t'*depth, is_subset)
-    if not is_subset:
-        return None
-    
-    return value
+    return None
 
 
 # class Symbolic(object):
