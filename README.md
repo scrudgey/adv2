@@ -1,2 +1,3 @@
 # adv2
-studies toward an object-oriented context-free grammar
+
+Notes and proofs of concept toward an object-oriented context-free grammar for game development.
