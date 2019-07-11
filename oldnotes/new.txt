@@ -1,0 +1,131 @@
+fresh notes toward game concept
+7/1/2019
+
+motivation: it feels like there should be a simple, generalized description of what
+i'm trying to accomplish.
+
+in QM, a state is in superposition of possibilities, unresolved until observed.
+upon being observed, state becomes an eigenvector (yields a concrete value) by 
+projecting onto a basis vector determined by the observable.
+
+the collapse is only ever determined just-in-time, but it collapses in such a way that
+consistency is maintained (never contradicts self) and certain things are conserved.
+
+this is the basis of the notion for the game. everything should be in superposition
+until just-in-time, when the scene is rendered for the player. when a QM state collapses,
+it is purely random; when our state collapses, we can motivate its collapse to be in 
+a certain direction that is determined by a director with a larger goal in mind.
+
+director contains high-level directives such as "the player will encounter a bad guy"
+"the player will be captured" or "there will be a fight"
+the state is a multidimensional expansion of all possible gamestates consistent with the 
+past history / player state / known information.
+
+observation happens when something must be rendered: the scene is observed (all objects
+visible in scene, not inside or behind other objects): the observation returns an eigenvector e.
+we project the state onto the subspace spanned by the observation.
+v || U = <v, ui>/<ui, ui> ui
+
+STATEMENT:
+
+essential operations:
+given a partial state |s> enumerate the full subspace 
+given another state |o> define the projection of s onto o
+given a high level directive and a state s,
+    and a player action, observation, or computer move,
+    determine the desired outcome o
+
+high-level directive: 
+* player learn of kidnapping
+    1. information discovery
+* player confront bad guy 
+    1. bad guy discovery
+    2. bad guy battle
+* player learns secret location
+    1. information discovery
+* player confronts boss in secret location
+    1. player in location
+    2. bad guy battle
+* player frees the kidnapped person
+    1. information discovery
+    2. player in location
+
+
+so: identify the current imperative:
+    1. information discovery
+        type: bad guy plot 
+        contenet: {person} is kidnapped
+
+imperative must be made concrete.
+    "tell the player that {bad guy} has kidnapped {person}"
+the specifics are provided by script, the imperative is 
+more general (applies to more than just this script, connects up with system)
+so, plot configuration is instruction for an imperative factory.
+
+imperative might be phrased in terms of a state satisfaction:
+state.information.contains(plot.bg#232423)
+or it could update its state when it triggers (not as good)
+
+then we have the state, and possibilities: ive been thinking of them
+as a single object, like in quantum. anything not directly observed is in a 
+superposition. among those possibilities are ways we can satisfy the imperative.
+
+e.g. 
+1. open a drawer, find a note: the note yields information
+2. phone rings, answer it, a voice says information
+3. a brick is thrown through window. tied to brick is note. note yields information.
+
+
+I. if we wanted to phrase this in terms of projections, it would have to look like
+<s'| s> -> user used phone, user looked in drawer, etc.
+
+the problem is that the state does not contain history: it doesn't care how we 
+got here. so the specifics of how information was achieved are not part of state.
+
+II. the other approach is to turn this into a graph problem. map states and possibilities
+connected by transformations.
+a problem is this is player agency. in fact, the engine does not navigate the graph
+to a random destination. it has more to do with leveraging the outcome of collapses
+in an intelligent way. in other words:
+
+III: when the player opens the drawer, any object might be in there
+{book, gun, knife, candle, ticket stub, matchbook, note}
+we do not collapse the state of inside the drawer before this, so we don't
+navigate from s -> s' by collapsing the state inside the drawer independent
+of player.
+
+so we have a state, a player action which triggers an observation of inside of 
+drawer. now we have a state, a collapse to be determined, and an imperative.
+
+the goal is for collapser to realize that if we collapse to note, note can contain
+the required information, and the player reading that achieves the desired state.
+how can this be done?
+
+it seems that "note" is still not concrete. its contents are in superposition.
+so we have collapse: item: {a, b, note: {text: {ransom}, {groceries} }}
+
+in a nonmotivated collapse perhaps note is {groceries} or {telephone} or something.
+(but not ransom!)
+in a motivated collapse, we choose {ransom}. or perhaps we inject the text
+at the top level:
+def Note:
+    text: {Text}
+
+as long as Text is still fully general, it is compatible with ransom information.
+(i.e. Text did not collapse to {phone number} before this)
+so note.text is {Text} which has information interface.
+
+if the goal is just to place the information in the environment with the player,
+this would be sufficient.
+
+
+note: the possible objects are still more general than the specifics of the plot.
+like the imperative being more general than the plot.
+
+state + imperative + collapse (player action) -> motivated collapse
+state + imperative + director action -> motivated random effect or outcome
+
+
+
+
+q2: how to motivate someone saying "i left the package in the drawer"
