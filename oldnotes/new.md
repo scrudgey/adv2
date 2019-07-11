@@ -102,12 +102,10 @@ we can't force the player's hand, but we can choose the situation that makes imp
 ## collapse vs. action:
 
 look more closely at the "motivated collapse" of the note text.
-player reads note $\rightarrow$ player observes note.text $\rightarrow$ collapser collapses note.text $\rightarrow$ note.text is the imperative information $\rightarrow$ displayInformation(note.text) $\rightarrow$ imperative satisfied.
+How do we link the exposed action interface perspective with the quantum state perspective?
 
-Does the collapser collapse the note text?
-
-$$ \widehat{O}\ note.text \rightarrow information $$
-
+1. reading the note should collapse note.text and information provided should just be note.text.
+2. reading the note should short-circuit the note.text state and override it with text provided by imperative.
 
 
 
