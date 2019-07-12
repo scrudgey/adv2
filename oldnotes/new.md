@@ -99,6 +99,8 @@ maybe the player doesn't read the note, but we can allow that placing the note i
 when reading the note, motivated collapse will make it a ransom note.
 we can't force the player's hand, but we can choose the situation that makes imperative more likely.
 
+#### unknown: deciding that y is closer to imperative goal than x
+
 ## collapse vs. action:
 
 look more closely at the "motivated collapse" of the note text.
@@ -107,6 +109,13 @@ How do we link the exposed action interface perspective with the quantum state p
 1. reading the note should collapse note.text and information provided should just be note.text.
 2. reading the note should short-circuit the note.text state and override it with text provided by imperative.
 
+choice 2 is pointing in a new direction: functional recasting of superposition and collapse.
+there are two behaviors, depending on whether we are motivated or not. 
+this suggests that context free grammar could be just a special case of the overarching system.
+
+exposed action interfaces that specify types of transformations on state allow the determination of imperative distance and motivated collapse.
+
+the function is like a lazy value: it 
 
 
 ---
