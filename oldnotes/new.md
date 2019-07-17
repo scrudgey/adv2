@@ -1,6 +1,7 @@
 # notes
 ## 7/1/2019
 
+
 motivation: it feels like there should be a simple, generalized description of what i'm trying to accomplish.
 
 the collapse is only ever determined just-in-time, but it collapses in such a way that consistency is maintained (never contradicts self) and certain things are conserved.
@@ -99,7 +100,7 @@ maybe the player doesn't read the note, but we can allow that placing the note i
 when reading the note, motivated collapse will make it a ransom note.
 we can't force the player's hand, but we can choose the situation that makes imperative more likely.
 
-#### unknown: deciding that y is closer to imperative goal than x
+#### unknown but solvable: deciding that y is closer to imperative goal than x
 
 ## collapse vs. action:
 
@@ -113,10 +114,144 @@ choice 2 is pointing in a new direction: functional recasting of superposition a
 there are two behaviors, depending on whether we are motivated or not. 
 this suggests that context free grammar could be just a special case of the overarching system.
 
-exposed action interfaces that specify types of transformations on state allow the determination of imperative distance and motivated collapse.
+**Functional aspect**
 
-the function is like a lazy value: it 
+* exposed action interfaces that specify types of transformations on state allow the determination of imperative distance and motivated collapse.
 
+**Superposition aspect**
+
+* certain functions may only work if the player has not observed an outcome yet. if a player has observed a outcome, the future is consistent with that. some actions are only exposed by superpositions.
+
+## functional specification
+
+environments and objects expose state-mutating functions with the signature:
+
+$$
+f: imperative \rightarrow s'
+$$
+
+e.g. a window exposes several possible state actions:
+
+* imperative: supply information from the bad guys
+  * a note tied to a brick gets tossed through window
+* allow a character to enter
+  * character enters through the window
+* allow player to spot something
+  * player sees the event through the window
+
+because these actions are specified as functions that take imperative in their signature, the specifics can be generated / inferred in a way that is guaranteed to be consistent.
+
+## generalizing functional approach
+
+we have imperative: player learns information from bad guys. 
+we want to enumarate the ways this imperative can be satisfied by the environment. 
+we find:
+
+1. (window) brick gets tossed through window
+2. (telephone) player gets a phone call
+3. (letter) player opens a letter received in the mail
+
+#### static methods
+any number of different bricks may be tossed through the window at any time, and any number of phone calls may be received, without ever compromising internal consistency.
+these actions are exposed intrinsically by the object.
+
+#### wavefunction collapse
+if the player has opened the letter and read it before this directive, it is already collapsed and can't contain new information.
+therefore, it is not intrinsic to the letter object, but to its superposition.
+
+if it is not collapsed, the player may interact with (read) it, at which time it will satisfy the imperative and its contents will be the requisite bad guy information.
+at any future time, if the player reads the letter again, it will contain the bad guy information: it is no longer a superposition.
+
+overall, this is different in that it requires player interaction, and it is sourced by superpositions, not the object itself.
+
+the hope is that both actions can share a parent class.
+
+## wavefunction collapse
+
+the concrete object, letter, has no static actions.
+a superposition of letter exposes static actions.
+somehow, creating a superposition of concrete objects creates new actions from the potential of collapsing a wavefunction.
+
+$$
+l: L
+\\
+\Psi: \{l\}
+\\
+\Psi.f : i \rightarrow s'
+$$
+
+$\Psi$, being a different class of object, naturally exposes different methods.
+in the act of constructing a superposition of a letter, the action $\Psi.f$ is created by reflection on letter.
+when $\Psi.f$ is called, it collapses the superposition (minimally).
+
+in this way, superpositions re-enter the game logic as first-class objects.
+other things may be superpositions and other methods may collapse them, for full nimrod procedural generation.
+
+the $\Psi.f$ action is both an imperative fulfillment, and a player interaction. 
+
+the player may still read the letter even when the imperative is not actively about providing information.
+in this case, the superposition collapses minimally, destroying $\Psi.f$ and therefore destroying the imperative fulfillment.
+
+the player may read the letter when the imperative is about providing information.
+in this case, the superposition collapses to a state driven by the imperative, destroying $\Psi.f$ and the imperative fulfilment.
+
+## actions as fundamental
+the fundamental objects are actions.
+
+* actions may be attached to superpositions or to objects
+* actions may be triggered by the player or by the director
+* actions on superpositions may collapse the superposition
+* actions may fulfill imperatives
+* actions may collapse a superposition in a motivated way to fulfill an imperative
+
+$$
+f_1 : () \rightarrow s'
+\\
+f_2 : i \rightarrow s'
+\\
+f_3 : p \rightarrow s'
+\\
+f_4 : (p, i) \rightarrow s'
+$$
+
+object letter exposes an actionL
+
+$$l.f : p \rightarrow s.display(l.c)$$
+
+this action (read) requires player interaction, and it displays the letter contents.
+
+suppose we have imperative $i$ and that the player interacting with $l.f$ will fulfill the imperative. 
+then we have
+
+$$l.f : (p, i) \rightarrow s.display(l.c)$$
+
+where $s.display$ fulfills the imperative.
+
+now put the letter in a superposition:
+
+$$
+\Psi: {l}
+\\
+\Psi.f: p \rightarrow \psi.f(p)
+$$
+
+the player can interact with (read) the superposition, and the superposition collapses to $\psi$.
+
+return to superposition and now introduce the imperative, $i$.
+
+$$
+\Psi: {l}
+\\
+\Psi.f: (p, i) \rightarrow \psi_i.f(p)
+$$
+
+now, when $\Psi$ collapses, it collapses to $\psi_i$ such that $\psi_i.f$ fulfills imperative $i$.
+
+we need language to express the fact that $\Psi$ changes, and that $i$ is fulfilled.
+
+---
+
+in constructing $\Psi.f$ from $l.f$, we had to use the signature of $l.f$ to determine that 
 
 ---
 
@@ -126,6 +261,8 @@ like the imperative being more general than the plot.
 state + imperative + collapse (player action) -> motivated collapse
 state + imperative + director action -> motivated random effect or outcome
 
+writing does not map to speech, both writing and speech map to a third system.
+someone who cannot hear / never learned to speak the language can learn to read it.
 
 
 

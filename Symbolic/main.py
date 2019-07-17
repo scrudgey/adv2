@@ -7,14 +7,20 @@ PRIMITIVE_TYPES = [str, int, float]
 class Symbol(object):
     def __init__(self, values):
         self.parent = None
+        self.children = {}
         self.InitVals(values)
         self.CalcAttributes()
         
     def InitVals(self, values):
         if inspect.isclass(values):
             self.values = []
-            for subclass in values.__subclasses__():
-                self.values.append(subclass())
+            def _append_subclass_instances(t):
+                subclasses = t.__subclasses__()
+                for subclass in subclasses:
+                    _append_subclass_instances(subclass)
+                if len(subclasses) == 0:
+                    self.values.append(t())
+            _append_subclass_instances(values)
         else:
             if type(values) is Symbol:
                 self.values = values.values
@@ -43,6 +49,9 @@ class Symbol(object):
     
     def CalcAttributes(self):
         # TODO: drop deprecated attributes
+        for key in self.children:
+            delattr(self, key)
+        self.children = {}
         attribute_values = defaultdict(list)
         for value in self.values:
             if type(value) in PRIMITIVE_TYPES:
@@ -55,11 +64,12 @@ class Symbol(object):
                 else:
                     attribute_values[key].append(val)
         for key, vals in attribute_values.items():
-                # implies recursion!
-                symbol = Symbol(vals)
-                symbol.parent = self
-                symbol.attribute_name = key
-                setattr(self, key, symbol)
+            # implies recursion!
+            symbol = Symbol(vals)
+            symbol.parent = self
+            symbol.attribute_name = key
+            self.children[key] = symbol
+            setattr(self, key, symbol)
     
     def Observe(self):
         if self._value:
@@ -67,13 +77,12 @@ class Symbol(object):
         else:
             return self.Collapse(None)
     
-    def Collapse(self, symbol):
+    def Collapse(self, symbol, upward=True):
         if symbol is None:
             return self.Collapse(Symbol([random.choice(self.values)]))
         # TODO: reject if intersection is 0? some basic rejection 
-        # TODO: symbol is type
         
-        if type(symbol) is not Symbol:
+        if type(symbol) not in [Symbol, type]:
             symbol = Symbol(symbol)
 
         # adopt new values
@@ -81,15 +90,20 @@ class Symbol(object):
 
         # recalculate my attributes
         self.CalcAttributes()
+        
+        # ensure that my calculated attributes correspond to symbol's
+        if type(symbol) is not type:
+            for key in self.children and symbol.children:
+                self.children[key].Collapse(symbol.children[key], upward=False)
 
         # restrict my values to only those whose attributes are also consistent with symbol
-        if self.parent is not None:
+        if self.parent is not None and upward is True:
             # self.parent.Collapse(self.parent)
             self.parent.Restrict(self, self.attribute_name)
 
         return self
     
-    def Restrict(self, child, attribute_name):
+    def Restrict(self, child, attribute_name, upward=True):
         def _attributes_match(value):
             value_attributes = AttributesDict(value)
             if attribute_name in value_attributes:
@@ -99,7 +113,6 @@ class Symbol(object):
                 if intersection is None:
                     return False
                 else:
-                    # should this be a symbol?
                     setattr(value, attribute_name, intersection)
                     return True
             else:
@@ -114,7 +127,7 @@ class Symbol(object):
             raise Exception('empty restriction!')
         self.InitVals(new_vals)
 
-        if self.parent is not None:
+        if self.parent is not None and upward is True:
             self.parent.Restrict(self, self.attribute_name)
 
 def AttributesDict(obj):
@@ -172,8 +185,7 @@ def Subset(value, target, depth=0):
     ###################
     # CONCRETE VALUES #
     ###################
-
-    # is_subset = False
+    
     if value == target:
         return value
     if type(target) is type:
@@ -193,6 +205,8 @@ def Subset(value, target, depth=0):
     # print('\t'*depth, is_subset)
     return None
 
+class Abstract(object):
+    _abstract = True
 
 # class Symbolic(object):
 #     def __init__(self):
