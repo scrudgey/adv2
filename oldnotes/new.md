@@ -141,6 +141,15 @@ e.g. a window exposes several possible state actions:
 
 because these actions are specified as functions that take imperative in their signature, the specifics can be generated / inferred in a way that is guaranteed to be consistent.
 
+generality can be attained by subclassing imperatives: e.g. the imperative that player learns of kidnapping is a kind of information transfer. thus any exposed action that can satisfy an information transfer can satisfy the imperative.
+
+i suspect that we want to avoid generalization: generalization tends to break things which need to be specific. e.g.:
+
+television can provide general information transfer. note can achieve general information transfer. but the way they achieve ransom notice is different:
+
+* tv: news story about kidnapping
+* note: ransom note from kidnapper
+
 ## generalizing functional approach
 
 we have imperative: player learns information from bad guys. 
@@ -214,7 +223,7 @@ f_3 : p \rightarrow s'
 f_4 : (p, i) \rightarrow s'
 $$
 
-object letter exposes an actionL
+object letter exposes an action
 
 $$l.f : p \rightarrow s.display(l.c)$$
 
@@ -267,3 +276,74 @@ someone who cannot hear / never learned to speak the language can learn to read 
 
 
 q2: how to motivate someone saying "i left the package in the drawer"
+
+
+---
+
+a depth-2 search from top level imperative would reveal this, or a depth-2 search from chest.inspect.
+
+problem: collapse naturally handles the notion of historical / logical consistency.
+
+
+
+new thoughts: objects exposing multiple methods of the sort
+"news broadcast"
+"personal letter"
+"receive item"
+
+and imperatives having multiple slots for achievements via news broadcast, personal letter
+
+imperative knows how to adapt its specific content to the various interfaces.
+
+concrete example:
+
+imperative: player learns of kidnapping
+adapts: news broadcast, personal letter
+    news: "{person} has been reported missing today...."
+    letter: "send us money or you'll never see {person} again"
+
+object: letter
+adapts: news broadcast, personal letter
+    news broadcast: the envelope contains a newspaper clipping. the paper reads:
+    letter: the envelope contains a letter made of cut out letters. the letter reads:
+
+so there are interfaces on both sides, and a successful imperative connects up the two
+
+the envelope contains a newspaper clipping. the paper reads:
+"{person} has been reported missing today...."
+
+now, if there is no 1-st level plug connection for the imperative interface, the director moves toward the right interface. this recovers the desired generality.
+e.g. if there isn't a letter in the scene:
+
+* mail slot
+    * adapts: create letter
+
+* window
+    * adapts: brick tossed through with letter
+
+* chest of drawers
+    * adapts: contains object
+
+so building out the graph, we desire an node that exposes one of the desired interfaces: news broadcast, personal letter
+
+so from state, we can do
+
+$$
+state \rightarrow mail.createLetter \rightarrow letter.note \\
+state \rightarrow mail.createLetter \rightarrow letter.news \\
+state \rightarrow window.brick \rightarrow letter.note \\
+state \rightarrow window.brick \rightarrow letter.news \\
+state \rightarrow drawers.item(letter) \rightarrow letter.news \\
+state \rightarrow drawers.item(letter) \rightarrow letter.note \\
+$$
+
+the real trick is in $\{state \rightarrow drawers.item(letter)\}$ because drawers.item could potentially create any item. somehow not only the interface but its result need to be managed. this is where the superposition idea came from: it handles it naturally.
+
+we can represent all of this as either superpositions or a very wide directed graph (or both? equivalent?)
+
+the idea is to expand the graph of possibilities starting from state. any exposed free action (mail slot letter, window brick) or the various outcomes of a free action (chest contains candle, chest contains gun, chest contains letter) are edges that take you to a new state, which specifies further edges.
+
+in this sense, something like chest.item is more like a set of free actions intermediate following a player choice (look in chest).
+or collapse $\{look(chest) \rightarrow chest.item(letter)\}$ to a single edge?
+
+imperative knows how to fulfill itself if given certain actions: news, letter, clue
