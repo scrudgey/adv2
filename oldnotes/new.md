@@ -5,12 +5,11 @@
 motivation: it feels like there should be a simple, generalized description of what i'm trying to accomplish.
 
 the collapse is only ever determined just-in-time, but it collapses in such a way that consistency is maintained (never contradicts self) and certain things are conserved.
-this is the basis of the notion for the game. everything should be in superposition until just-in-time, when the scene is rendered for the player. 
-when a QM state collapses, it is purely random; 
-when our state collapses, we can motivate its collapse to be in a certain direction that is determined by a director with a larger goal in mind.
+at the same time, collapse proceeds in a motivated way, to advance the general game state toward certain story goals.
+this is the basis of the notion for the game. 
+everything should be in superposition until just-in-time, when the scene is rendered for the player. 
 
-observation happens when something must be rendered: the scene is observed (all objects
-visible in scene, not inside or behind other objects)
+observation happens when something must be rendered: the scene is observed (all objects visible in scene, not inside or behind other objects)
 
 ## Statement of problem
 
